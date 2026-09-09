@@ -11,8 +11,32 @@ import json
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# 中文字体配置（Windows + Linux云部署兼容）
-plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK SC', 'WenQuanYi Zen Hei', 'Arial Unicode MS']
+from matplotlib import font_manager as _fm
+# ---------- 中文字体保障（本地Windows有中文字体则跳过；云部署Linux自动下载文泉驿正黑） ----------
+def _ensure_cn_font():
+    try:
+        _names = {f.name for f in _fm.fontManager.ttflist}
+        if any(k in n for n in _names for k in ('YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK', 'WenQuanYi', 'Source Han')):
+            return
+        import urllib.request
+        _dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wqy-zenhei.ttc')
+        if not os.path.exists(_dest) or os.path.getsize(_dest) < 1000000:
+            for _url in (
+                'https://cdn.jsdelivr.net/gh/anthonyfok/fonts-wqy-zenhei@master/wqy-zenhei.ttc',
+                'https://raw.githubusercontent.com/anthonyfok/fonts-wqy-zenhei/master/wqy-zenhei.ttc',
+            ):
+                try:
+                    urllib.request.urlretrieve(_url, _dest)
+                    if os.path.getsize(_dest) > 1000000:
+                        break
+                except Exception:
+                    continue
+        if os.path.exists(_dest) and os.path.getsize(_dest) > 1000000:
+            _fm.fontManager.addfont(_dest)
+    except Exception as _e:
+        print('中文字体加载失败(仅影响图内中文):', _e)
+_ensure_cn_font()
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'Microsoft YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK SC', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
 import streamlit as st
 import shap
