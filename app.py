@@ -297,6 +297,32 @@ def zhuhai_info(row):
 st.title('🏦 积信通 · 科技企业可解释授信辅助引擎')
 st.caption('基于创新积分2.0指标体系的科创授信决策辅助工具（工行杯参赛原型）')
 
+# ---------- 可查询范围 ----------
+try:
+    _overlap = len(set(train['企业名称'].astype(str).str.strip()) & set(zhuhai['企业名称'].astype(str).str.strip()))
+except Exception:
+    _overlap = 0
+try:
+    _total_pat = int(patents['专利申请总量'].sum(skipna=True)) if '专利申请总量' in patents.columns else None
+except Exception:
+    _total_pat = None
+st.markdown('#### 📊 可查询范围')
+_c1, _c2, _c3, _c4 = st.columns(4)
+_c1.metric('模型评分企业', f"{int(meta['n_samples']):,}家", delta='A股294 + 新三板3265')
+_c2.metric('珠海本地企业', f"{len(zhuhai):,}家", delta='三维画像评估')
+_c3.metric('专利覆盖', (f"{_total_pat:,}件" if _total_pat else '—'), delta='创新百强106家')
+_c4.metric('去重合计可查', f"{int(meta['n_samples']) + len(zhuhai) - _overlap:,}家", delta='含两类重叠企业')
+st.markdown(
+    '**查询说明**：输入企业名称后自动匹配——'
+    '① **A股/新三板企业**（3559家）输出完整模型报告（信用评分、风险等级、授信额度、SHAP特征解释、工行产品匹配）；'
+    '② **珠海本地企业**（1594家）财务数据不公开，输出"资质＋专利＋覆盖率"三维画像与材料补充建议。'
+)
+st.markdown(
+    '**覆盖名单**：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强、科技型中小企业等8类。'
+    '**示例查询**：珠海格力电器、宁德时代、迈瑞医疗、深科技。'
+)
+st.divider()
+
 with st.sidebar:
     st.header('⚙️ 查询设置')
     mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
