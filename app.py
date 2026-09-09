@@ -192,6 +192,21 @@ def coverage_analysis(zhuhai_row):
     missing = [m for m in missing if not any(m in c for c in covered)]
     return ratio, covered, missing[:5]
 
+# 特征显示单位（SHAP图标注用）
+_FEATURE_UNITS = {
+    '营业总收入': '万元',
+    '销售毛利率': '%',
+    '研发费用': '万元',
+    '营收增长率': '%',
+    '研发人员数': '人',
+    '员工人数': '人',
+    '资产负债率': '%',
+    '研发费用占比': '%',
+    '营收对数': 'ln(万元)',
+    '研发费用对数': 'ln(万元)',
+    '研发人员占比': '%',
+}
+
 def build_report(feature_row, show_shap=True):
     """训练集企业：双模型评分+SHAP"""
     global medians
@@ -217,7 +232,7 @@ def build_report(feature_row, show_shap=True):
             base = float(explainer_xgb.expected_value)
             fig, ax = plt.subplots(figsize=(9, max(3, 0.4 * len(FEATURES))))
             order = np.argsort(-np.abs(sv_fusion))[:8]
-            labels = [FEATURES[i] for i in order][::-1]
+            labels = [FEATURES[i] + (f"({_FEATURE_UNITS[FEATURES[i]]})" if FEATURES[i] in _FEATURE_UNITS else "") for i in order][::-1]
             vals = [sv_fusion[i] for i in order][::-1]
             colors = ['#E5533C' if v > 0 else '#3C9AE5' for v in vals]
             ax.barh(labels, vals, color=colors)
