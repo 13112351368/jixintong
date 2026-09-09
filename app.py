@@ -12,31 +12,51 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as _fm
-# ---------- 中文字体保障（本地Windows有中文字体则跳过；云部署Linux自动下载文泉驿正黑） ----------
+# ---------- 中文字体保障（本地Windows有中文字体则跳过；云部署优先读取随仓库部署的simhei.ttf，失败再在线下载） ----------
 def _ensure_cn_font():
     try:
         _names = {f.name for f in _fm.fontManager.ttflist}
         if any(k in n for n in _names for k in ('YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK', 'WenQuanYi', 'Source Han')):
             return
-        import urllib.request
-        _dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wqy-zenhei.ttc')
-        if not os.path.exists(_dest) or os.path.getsize(_dest) < 1000000:
-            for _url in (
-                'https://cdn.jsdelivr.net/gh/anthonyfok/fonts-wqy-zenhei@master/wqy-zenhei.ttc',
-                'https://raw.githubusercontent.com/anthonyfok/fonts-wqy-zenhei/master/wqy-zenhei.ttc',
-            ):
-                try:
-                    urllib.request.urlretrieve(_url, _dest)
-                    if os.path.getsize(_dest) > 1000000:
-                        break
-                except Exception:
-                    continue
-        if os.path.exists(_dest) and os.path.getsize(_dest) > 1000000:
-            _fm.fontManager.addfont(_dest)
+        _base = os.path.dirname(os.path.abspath(__file__))
+        _font_path = None
+        # 1) 优先使用随仓库部署的 simhei.ttf（不依赖外部网络，最稳）
+        _local = os.path.join(_base, 'simhei.ttf')
+        if os.path.exists(_local) and os.path.getsize(_local) > 1000000:
+            _font_path = _local
+        else:
+            # 2) 在线下载文泉驿正黑（备用）
+            import urllib.request
+            _dest = os.path.join(_base, 'wqy-zenhei.ttc')
+            if not os.path.exists(_dest) or os.path.getsize(_dest) < 1000000:
+                for _url in (
+                    'https://cdn.jsdelivr.net/gh/anthonyfok/fonts-wqy-zenhei@master/wqy-zenhei.ttc',
+                    'https://raw.githubusercontent.com/anthonyfok/fonts-wqy-zenhei/master/wqy-zenhei.ttc',
+                ):
+                    try:
+                        urllib.request.urlretrieve(_url, _dest)
+                        if os.path.getsize(_dest) > 1000000:
+                            break
+                    except Exception:
+                        continue
+            if os.path.exists(_dest) and os.path.getsize(_dest) > 1000000:
+                _font_path = _dest
+        if _font_path:
+            _fm.fontManager.addfont(_font_path)
+            # 3) 清除matplotlib字体缓存，确保新字体立即生效
+            try:
+                _cache = os.path.join(os.path.expanduser('~'), '.cache', 'matplotlib')
+                if os.path.isdir(_cache):
+                    for _f in os.listdir(_cache):
+                        if _f.startswith('fontlist'):
+                            os.remove(os.path.join(_cache, _f))
+                _fm._load_fontmanager(try_read_cache=False)
+            except Exception:
+                pass
     except Exception as _e:
         print('中文字体加载失败(仅影响图内中文):', _e)
 _ensure_cn_font()
-plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'Microsoft YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK SC', 'Arial Unicode MS']
+plt.rcParams['font.sans-serif'] = ['SimHei', 'WenQuanYi Zen Hei', 'Microsoft YaHei', 'SimSun', 'Noto Sans CJK SC', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
 import streamlit as st
 import shap
