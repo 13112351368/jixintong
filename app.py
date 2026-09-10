@@ -299,6 +299,23 @@ def zhuhai_info(row):
         base_score += 3
     proxy_score = round(min(base_score, 90), 1)
 
+    # 新字段：有效专利 / 纳税信用 / 成立年限
+    try:
+        valid_pat = float(row.get('有效专利数'))
+        if pd.isna(valid_pat):
+            valid_pat = None
+    except (ValueError, TypeError):
+        valid_pat = None
+    tax = str(row.get('纳税信用等级', '')).strip()
+    if tax in ('', 'nan') or '未公开' in tax:
+        tax = '未公开'
+    try:
+        years = row.get('成立年限')
+        if pd.isna(years):
+            years = None
+    except Exception:
+        years = None
+
     return {
         'rank_name': rank_name, 'rank': rank,
         'sme': sme, 'giant': giant,
@@ -306,6 +323,7 @@ def zhuhai_info(row):
         'pat_lvl': pat_lvl, 'pat_grade': pat_grade,
         'coverage': ratio, 'covered': covered, 'missing': missing,
         'proxy_score': proxy_score,
+        'valid_pat': valid_pat, 'tax': tax, 'years': years,
     }
 
 # ---------- 界面 ----------
@@ -334,7 +352,7 @@ st.markdown(
 )
 st.markdown(
     '**覆盖名单**：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强、科技型中小企业等8类。'
-    '**示例查询**：珠海格力电器、宁德时代、迈瑞医疗、深科技。'
+    '**示例查询**：立讯精密、深科技、珠海格力大金机电、格力钛新能源。'
 )
 st.divider()
 
@@ -345,16 +363,32 @@ with st.sidebar:
     st.markdown(f'**模型状态**\n\n- 训练样本：{meta["n_samples"]}家\n- 融合AUC：{meta["auc_fusion"]:.4f}\n- 准确率：{meta["accuracy"]*100:.1f}%')
 
 if mode == '企业名称查询':
-    q = st.text_input('请输入企业名称（支持模糊匹配）', placeholder='如：珠海格力电器 或 宁德时代')
+    if 'sel_company' not in st.session_state:
+        st.session_state.sel_company = ''
+    q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company,
+                      placeholder='如：立讯精密 或 格力')
+    q = q.strip()
+    # 自动联想：输入时实时弹出匹配企业建议，点击即查询
     if q:
-        q = q.strip()
+        _all_names = pd.concat([train['企业名称'], zhuhai['企业名称']]).astype(str).str.strip()
+        _sug = _all_names[_all_names.str.contains(q, na=False)].drop_duplicates().head(12).tolist()
+        if _sug:
+            st.caption(f'🔍 匹配到 {len(_sug)} 家企业，点击直接查询：')
+            _cols = st.columns(3)
+            for i, _s in enumerate(_sug):
+                if _cols[i % 3].button(_s, key=f'sug_{i}', width='stretch'):
+                    st.session_state.sel_company = _s
+                    st.rerun()
+        else:
+            st.warning(f'未找到与「{q}」匹配的企业。可试：立讯精密、深科技、格力。')
+    if q:
         # 1. 训练集匹配
         train_hits = train[train['企业名称'].str.contains(q, na=False)]
         # 2. 珠海总库匹配
         zhuhai_hits = zhuhai[zhuhai['企业名称'].str.contains(q, na=False)]
 
         if len(train_hits) == 0 and len(zhuhai_hits) == 0:
-            st.warning(f'未找到与「{q}」匹配的企业。请尝试：珠海格力电器、宁德时代、迈瑞医疗，或输入珠海企业全称。')
+            st.warning(f'未找到与「{q}」匹配的企业。可尝试：立讯精密、深科技、格力，或输入珠海企业全称。')
         else:
             # 展示训练集企业（完整模型报告）
             for _, row in train_hits.head(3).iterrows():
@@ -380,6 +414,15 @@ if mode == '企业名称查询':
                 info = zhuhai_info(row)
                 st.subheader(f'🏙️ {name}（珠海本地企业）')
                 st.markdown(f'**科创画像**：{info["rank_name"]}｜专精特新中小企业 {info["sme"]}｜小巨人 {info["giant"]}')
+                _extra = []
+                if info['valid_pat'] is not None:
+                    _extra.append(f'有效专利 {int(info["valid_pat"])} 件')
+                if info['tax'] and info['tax'] != '未公开':
+                    _extra.append(f'纳税信用 {info["tax"]}')
+                if info['years'] is not None:
+                    _extra.append(f'成立 {int(info["years"])} 年')
+                if _extra:
+                    st.markdown('**经营画像**：' + '｜'.join(_extra))
                 c1, c2, c3 = st.columns(3)
                 c1.metric('代理创新能力评分', info['proxy_score'])
                 c2.metric('指标覆盖率', f"{info['coverage']}%", delta=f'覆盖{len(info["covered"])}/12项')
@@ -413,10 +456,27 @@ else:
     if show_all:
         view = view[view['专利申请总量'].notna() & (view['专利申请总量'] > 0)]
 
-    st.dataframe(view, use_container_width=True, height=400)
+    # 关键字过滤（替代大下拉，避免上千选项导致卡顿）
+    kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
+    if kw:
+        view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
 
-    sel_name = st.selectbox('选择企业查看画像报告', [''] + view['企业名称'].tolist())
-    if sel_name:
+    st.dataframe(view, width='stretch', height=400)
+    st.caption(f'当前显示 {len(view)} 家企业')
+
+    # 企业选择：显示前50家可点击按钮（替代大selectbox，性能稳定）
+    if 'zh_sel' not in st.session_state:
+        st.session_state.zh_sel = ''
+    show_names = view['企业名称'].astype(str).tolist()[:50]
+    if show_names:
+        st.markdown('**点击企业查看画像报告**（当前列表前50家）：')
+        _c = st.columns(3)
+        for i, n in enumerate(show_names):
+            if _c[i % 3].button(n, key=f'zh_{i}', width='stretch'):
+                st.session_state.zh_sel = n
+                st.rerun()
+    sel_name = st.session_state.zh_sel
+    if sel_name and sel_name in view['企业名称'].astype(str).values:
         row = view[view['企业名称'] == sel_name].iloc[0]
         info = zhuhai_info(row)
         st.subheader(f'📄 {sel_name} 授信辅助报告')
@@ -425,6 +485,15 @@ else:
         c2.metric('指标覆盖率', f"{info['coverage']}%")
         c3.metric('专利总量', int(info['pat']))
         st.markdown(f'**资质层级**：{info["rank_name"]}')
+        _extra2 = []
+        if info['valid_pat'] is not None:
+            _extra2.append(f'有效专利 {int(info["valid_pat"])} 件')
+        if info['tax'] and info['tax'] != '未公开':
+            _extra2.append(f'纳税信用 {info["tax"]}')
+        if info['years'] is not None:
+            _extra2.append(f'成立 {int(info["years"])} 年')
+        if _extra2:
+            st.markdown('**经营画像**：' + '｜'.join(_extra2))
         st.markdown('**已覆盖指标**：' + '、'.join(info['covered']))
         st.markdown('**建议补充材料**：' + ('、'.join(info['missing']) if info['missing'] else '材料齐全'))
         st.markdown('**授信结论**：' + ('建议纳入创新积分贷初步评估，补充材料后完整评估。' if info['proxy_score'] >= 50 else '建议补充财务及研发材料后再评估，当前材料完整度不足。'))
