@@ -73,48 +73,62 @@ MODEL = os.path.join(BASE, 'models')
 
 st.set_page_config(page_title='积信通·科创授信辅助引擎', page_icon='🏦', layout='wide')
 
-# ---------- 工行品牌主题 CSS ----------
+# ---------- 工行品牌主题 CSS（高对比度版） ----------
 st.markdown("""
 <style>
 :root {
   --icbc-red: #C7000B;
   --icbc-red-dark: #9E0009;
 }
-.stApp { background: #F7F6F3; }
-h1, h2, h3 { color: #1A1B1C; font-weight: 700; }
-.stTitle { letter-spacing: 0.5px; }
-.stCaption { color: #6B7280; }
+.stApp { background: #FFFFFF; }
+/* 全局文字加深，保证对比 */
+body, p, span, div, label { color: #1A1B1C !important; }
+h1, h2, h3 { color: #000000; font-weight: 700; }
+.stCaption, small { color: #333333 !important; font-size: 13px !important; }
+div[data-testid="stMarkdownContainer"] p { color: #1A1B1C; font-size: 15px; line-height: 1.7; }
+div[data-testid="stMarkdownContainer"] strong { color: #000000; }
+/* metric卡片 */
 div[data-testid="stMetric"] {
   background: #FFFFFF;
-  border: 1px solid #E8E7E2;
+  border: 2px solid #C7000B;
   border-radius: 12px;
   padding: 14px 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-div[data-testid="stMetric"] label { color: #6B7280; font-size: 13px; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red); font-weight: 700; }
+div[data-testid="stMetric"] label { color: #1A1B1C !important; font-size: 14px !important; font-weight: 600; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red-dark) !important; font-weight: 800 !important; font-size: 28px !important; }
+div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #333333 !important; font-size: 12px !important; }
+/* 按钮 */
 div.stButton > button {
   border-radius: 8px;
-  border: 1px solid #E0DFD9;
+  border: 2px solid #C7000B;
   background: #FFFFFF;
-  font-weight: 500;
-  transition: all 0.15s;
+  color: #C7000B !important;
+  font-weight: 700;
+  font-size: 14px;
 }
 div.stButton > button:hover {
-  border-color: var(--icbc-red);
-  color: var(--icbc-red);
+  background: #C7000B !important;
+  color: #FFFFFF !important;
 }
+/* 侧边栏 */
 section[data-testid="stSidebar"] {
   background: #FFFFFF;
-  border-right: 1px solid #E8E7E2;
+  border-right: 2px solid #E0DFD9;
 }
+section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #C7000B; }
+/* expander */
 div[data-testid="stExpander"] {
-  border: 1px solid #E8E7E2;
+  border: 2px solid #C7000B;
   border-radius: 10px;
   background: #FFFFFF;
 }
+/* input框 */
+input { font-size: 16px !important; }
+/* radio/checkbox */
+div[role="radiogroup"] label, div[role="checkbox"] label { color: #1A1B1C !important; font-size: 14px; }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ---------- 加载资源（缓存） ----------
