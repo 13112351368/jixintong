@@ -110,12 +110,14 @@ div.stButton > button:hover {
   background: #C7000B !important;
   color: #FFFFFF !important;
 }
-/* 侧边栏 */
+/* 侧边栏：马卡龙淡粉米色 */
 section[data-testid="stSidebar"] {
-  background: #FFFFFF;
-  border-right: 2px solid #E0DFD9;
+  background: #FDF2F2;
+  border-right: 2px solid #F5D5D5;
 }
 section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #C7000B; }
+section[data-testid="stSidebar"] .stRadio label { color: #333333; }
+section[data-testid="stSidebar"] .stMarkdownContainer p { color: #333333; }
 /* expander */
 div[data-testid="stExpander"] {
   border: 2px solid #C7000B;
