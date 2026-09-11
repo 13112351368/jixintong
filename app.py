@@ -126,6 +126,30 @@ div[data-testid="stExpander"] {
 input { font-size: 16px !important; }
 /* radio/checkbox */
 div[role="radiogroup"] label, div[role="checkbox"] label { color: #1A1B1C !important; font-size: 14px; }
+/* 顶部黑色条改白 */
+header[data-testid="stHeader"] { background: #FFFFFF !important; }
+.stApp > header { background: #FFFFFF !important; }
+/* 输入框：白底黑字，不要黑底 */
+input, textarea, .stTextInput input, .stTextArea textarea {
+  background-color: #FFFFFF !important;
+  color: #1A1B1C !important;
+  border: 2px solid #C7000B !important;
+  font-size: 16px !important;
+}
+/* radio选中点：红色不要蓝色 */
+div[role="radiogroup"] label div:first-child { background-color: #C7000B !important; }
+/* 去掉多余深色块 */
+div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #1A1B1C; }
+section.main, div.main { background: #FFFFFF !important; }
+/* 所有蓝色交互元素改工行红 */
+a { color: #C7000B !important; }
+div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #C7000B !important; }
+.stSelectbox > div > div { border: 2px solid #C7000B !important; }
+.stSelectbox > div > div:hover { border-color: #9E0009 !important; }
+/* 滚动条 */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #FFFFFF; }
+::-webkit-scrollbar-thumb { background: #C7000B; border-radius: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
