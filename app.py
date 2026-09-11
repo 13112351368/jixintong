@@ -60,6 +60,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei', 'WenQuanYi Zen Hei', 'Microsoft YaH
 plt.rcParams['axes.unicode_minus'] = False
 import streamlit as st
 import shap
+import plotly.graph_objects as go
 
 # ---------- 路径配置 ----------
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -71,6 +72,50 @@ else:
 MODEL = os.path.join(BASE, 'models')
 
 st.set_page_config(page_title='积信通·科创授信辅助引擎', page_icon='🏦', layout='wide')
+
+# ---------- 工行品牌主题 CSS ----------
+st.markdown("""
+<style>
+:root {
+  --icbc-red: #C7000B;
+  --icbc-red-dark: #9E0009;
+}
+.stApp { background: #F7F6F3; }
+h1, h2, h3 { color: #1A1B1C; font-weight: 700; }
+.stTitle { letter-spacing: 0.5px; }
+.stCaption { color: #6B7280; }
+div[data-testid="stMetric"] {
+  background: #FFFFFF;
+  border: 1px solid #E8E7E2;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+div[data-testid="stMetric"] label { color: #6B7280; font-size: 13px; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red); font-weight: 700; }
+div.stButton > button {
+  border-radius: 8px;
+  border: 1px solid #E0DFD9;
+  background: #FFFFFF;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+div.stButton > button:hover {
+  border-color: var(--icbc-red);
+  color: var(--icbc-red);
+}
+section[data-testid="stSidebar"] {
+  background: #FFFFFF;
+  border-right: 1px solid #E8E7E2;
+}
+div[data-testid="stExpander"] {
+  border: 1px solid #E8E7E2;
+  border-radius: 10px;
+  background: #FFFFFF;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # ---------- 加载资源（缓存） ----------
 @st.cache_resource
@@ -365,6 +410,18 @@ with st.sidebar:
 if mode == '企业名称查询':
     if 'sel_company' not in st.session_state:
         st.session_state.sel_company = ''
+    # 预设演示案例（答辩一键展示）
+    st.markdown('**🎯 演示案例（答辩直接点击）**')
+    _dc1, _dc2, _dc3 = st.columns(3)
+    if _dc1.button('🌟 案例A：立讯精密（A股龙头·高分报告）', width='stretch'):
+        st.session_state.sel_company = '立讯精密'
+        st.rerun()
+    if _dc2.button('📊 案例B：深科技（A股·风险维度展示）', width='stretch'):
+        st.session_state.sel_company = '深科技'
+        st.rerun()
+    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地三维画像）', width='stretch'):
+        st.session_state.sel_company = '格力大金'
+        st.rerun()
     q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company,
                       placeholder='如：立讯精密 或 格力')
     q = q.strip()
@@ -400,6 +457,28 @@ if mode == '企业名称查询':
                 c2.metric('风险等级', rep['level'])
                 c3.metric('建议额度', rep['amount'])
                 c4.metric('高风险概率', f"{rep['p_fusion']*100:.1f}%")
+                # 风险仪表盘（Plotly gauge）
+                _gcolor = '#2E9E5B' if rep['score'] >= 80 else ('#8BC8EA' if rep['score'] >= 60 else ('#FAAD14' if rep['score'] >= 40 else '#EA6668'))
+                _gauge = go.Figure(go.Indicator(
+                    mode='gauge+number',
+                    value=rep['score'],
+                    number={'font': {'size': 36, 'color': _gcolor}},
+                    gauge={
+                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#888'},
+                        'bar': {'color': _gcolor, 'thickness': 0.3},
+                        'bgcolor': 'white',
+                        'steps': [
+                            {'range': [0, 40], 'color': '#FBE3E3'},
+                            {'range': [40, 60], 'color': '#FEF3CD'},
+                            {'range': [60, 80], 'color': '#DCEFFB'},
+                            {'range': [80, 100], 'color': '#D9F2E0'},
+                        ],
+                        'threshold': {'line': {'color': '#333', 'width': 2}, 'thickness': 0.75, 'value': rep['score']},
+                    },
+                    title={'text': '信用评分仪表盘', 'font': {'size': 13}},
+                ))
+                _gauge.update_layout(height=220, margin=dict(l=20, r=20, t=40, b=10))
+                st.plotly_chart(_gauge, width='stretch')
                 st.markdown(f'**授信建议**：{rep["advice"]}')
                 st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
                 if rep['shap_fig']:
@@ -499,4 +578,15 @@ else:
         st.markdown('**授信结论**：' + ('建议纳入创新积分贷初步评估，补充材料后完整评估。' if info['proxy_score'] >= 50 else '建议补充财务及研发材料后再评估，当前材料完整度不足。'))
 
 st.divider()
-st.caption('数据来源：国家知识产权局专利检索系统、珠海市科技创新局/工信局公示、东方财富/新浪财经/全国股转系统。本工具为参赛原型，输出仅供参考，不构成授信决策。')
+with st.expander('📋 数据来源与合规说明（点击展开）', expanded=False):
+    st.markdown("""
+| 数据类别 | 来源渠道 | 用途 |
+| --- | --- | --- |
+| 企业财务指标 | 东方财富/新浪财经/全国股转系统（公开年报） | 模型训练11项特征 |
+| 专利数据 | 国家知识产权局专利检索系统（pss-system.cponline.cnipa.gov.cn） | 专利质量/创新能力评估 |
+| 企业资质 | 珠海市科技创新局/工信局公示、高新技术企业认定名单 | 创新积分2.0覆盖率推断 |
+| 经营/处罚信息 | 国家企业信用信息公示系统（gsxt.gov.cn） | 风险预警参考 |
+| 纳税信用等级 | 税务部门A级纳税人公示名单 | 经营画像辅助 |
+
+**合规声明**：本工具所有数据均来自**公开渠道**，不涉及工商银行内部客户数据；输出为模型参考值，不构成最终授信决策，实际审批以银行尽调为准。
+""")
