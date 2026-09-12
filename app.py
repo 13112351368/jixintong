@@ -165,15 +165,21 @@ div[data-testid="stCaption"] {
   border: none !important;
   padding: 0 !important;
 }
-/* radio选项：选中项用淡蓝底不要深蓝块 */
-div[role="radiogroup"] label {
+/* radio选项：选中项无色块，跟侧边栏背景融为一体，只加粗变色 */
+div[data-testid="stRadio"] label,
+div[role="radiogroup"] label,
+div[role="radiogroup"] > div {
   background: transparent !important;
-  border-radius: 8px;
-  padding: 6px 10px;
+  box-shadow: none !important;
+  border: none !important;
 }
-div[role="radiogroup"] label[aria-checked="true"],
+div[data-testid="stRadio"] label:has(input:checked),
 div[role="radiogroup"] label:has(input:checked) {
-  background: #D6E6F5 !important;
+  background: #EAF2FA !important;
+  box-shadow: none !important;
+}
+div[data-testid="stRadio"] label:has(input:checked) div,
+div[role="radiogroup"] label:has(input:checked) div {
   color: #1F4E79 !important;
   font-weight: 700;
 }
