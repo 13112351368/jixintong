@@ -166,18 +166,18 @@ div[data-testid="stCaption"] {
   padding: 0 !important;
 }
 /* radio选项：选中项完全透明，跟侧边栏融为一体，只加粗变色 */
-div[data-testid="stRadio"] label,
-div[role="radiogroup"] label,
-div[role="radiogroup"] > div,
-div[data-testid="stRadio"] label:has(input:checked),
-div[role="radiogroup"] label:has(input:checked) {
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label,
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div,
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div,
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div > div {
   background: transparent !important;
+  background-color: transparent !important;
   box-shadow: none !important;
   border: none !important;
   outline: none !important;
 }
-div[data-testid="stRadio"] label:has(input:checked) div,
-div[role="radiogroup"] label:has(input:checked) div {
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div,
+section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div > div {
   color: #1F4E79 !important;
   font-weight: 700;
 }
