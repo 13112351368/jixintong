@@ -73,85 +73,87 @@ MODEL = os.path.join(BASE, 'models')
 
 st.set_page_config(page_title='积信通·科创授信辅助引擎', page_icon='🏦', layout='wide')
 
-# ---------- 工行品牌主题 CSS（高对比度版） ----------
+# ---------- 商务蓝主题 CSS（高对比度版） ----------
 st.markdown("""
 <style>
 :root {
-  --icbc-red: #C7000B;
-  --icbc-red-dark: #9E0009;
+  --biz-blue: #1F4E79;
+  --biz-blue-mid: #2E75B6;
+  --biz-blue-light: #EAF2FA;
 }
 .stApp { background: #FFFFFF; }
-/* 全局文字加深，保证对比 */
-body, p, span, div, label { color: #1A1B1C !important; }
-h1, h2, h3 { color: #000000; font-weight: 700; }
-.stCaption, small { color: #333333 !important; font-size: 13px !important; }
-div[data-testid="stMarkdownContainer"] p { color: #1A1B1C; font-size: 15px; line-height: 1.7; }
-div[data-testid="stMarkdownContainer"] strong { color: #000000; }
+/* 全局文字 */
+body, p, span, div, label { color: #1A2B3C !important; }
+h1, h2, h3 { color: #1F4E79; font-weight: 700; }
+.stCaption, small { color: #3A4A5C !important; font-size: 13px !important; }
+div[data-testid="stMarkdownContainer"] p { color: #1A2B3C; font-size: 15px; line-height: 1.7; }
+div[data-testid="stMarkdownContainer"] strong { color: #1F4E79; }
 /* metric卡片 */
 div[data-testid="stMetric"] {
-  background: #FFFFFF;
-  border: 2px solid #C7000B;
+  background: linear-gradient(180deg, #F4F9FE 0%, #FFFFFF 100%);
+  border: 2px solid #1F4E79;
   border-radius: 12px;
   padding: 14px 16px;
 }
-div[data-testid="stMetric"] label { color: #1A1B1C !important; font-size: 14px !important; font-weight: 600; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red-dark) !important; font-weight: 800 !important; font-size: 28px !important; }
-div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #333333 !important; font-size: 12px !important; }
+div[data-testid="stMetric"] label { color: #1A2B3C !important; font-size: 14px !important; font-weight: 600; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #1F4E79 !important; font-weight: 800 !important; font-size: 28px !important; }
+div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #3A4A5C !important; font-size: 12px !important; }
 /* 按钮 */
 div.stButton > button {
   border-radius: 8px;
-  border: 2px solid #C7000B;
+  border: 2px solid #1F4E79;
   background: #FFFFFF;
-  color: #C7000B !important;
+  color: #1F4E79 !important;
   font-weight: 700;
   font-size: 14px;
 }
 div.stButton > button:hover {
-  background: #C7000B !important;
+  background: #1F4E79 !important;
   color: #FFFFFF !important;
 }
-/* 侧边栏：马卡龙淡粉米色 */
+/* 侧边栏：淡蓝马卡龙 */
 section[data-testid="stSidebar"] {
-  background: #FDF2F2;
-  border-right: 2px solid #F5D5D5;
+  background: #EAF2FA;
+  border-right: 2px solid #B4CCE3;
 }
-section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #C7000B; }
-section[data-testid="stSidebar"] .stRadio label { color: #333333; }
-section[data-testid="stSidebar"] .stMarkdownContainer p { color: #333333; }
+section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #1F4E79; }
+section[data-testid="stSidebar"] .stRadio label { color: #1A2B3C; }
+section[data-testid="stSidebar"] .stMarkdownContainer p { color: #1A2B3C; }
 /* expander */
 div[data-testid="stExpander"] {
-  border: 2px solid #C7000B;
+  border: 2px solid #1F4E79;
   border-radius: 10px;
   background: #FFFFFF;
 }
 /* input框 */
 input { font-size: 16px !important; }
 /* radio/checkbox */
-div[role="radiogroup"] label, div[role="checkbox"] label { color: #1A1B1C !important; font-size: 14px; }
-/* 顶部黑色条改白 */
+div[role="radiogroup"] label, div[role="checkbox"] label { color: #1A2B3C !important; font-size: 14px; }
+/* 顶部条 */
 header[data-testid="stHeader"] { background: #FFFFFF !important; }
 .stApp > header { background: #FFFFFF !important; }
-/* 输入框：白底黑字，不要黑底 */
+/* 输入框 */
 input, textarea, .stTextInput input, .stTextArea textarea {
   background-color: #FFFFFF !important;
-  color: #1A1B1C !important;
-  border: 2px solid #C7000B !important;
+  color: #1A2B3C !important;
+  border: 2px solid #1F4E79 !important;
   font-size: 16px !important;
 }
-/* radio选中点：红色不要蓝色 */
-div[role="radiogroup"] label div:first-child { background-color: #C7000B !important; }
-/* 去掉多余深色块 */
-div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #1A1B1C; }
+/* radio选中点 */
+div[role="radiogroup"] label div:first-child { background-color: #1F4E79 !important; }
+div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #1A2B3C; }
 section.main, div.main { background: #FFFFFF !important; }
-/* 所有蓝色交互元素改工行红 */
-a { color: #C7000B !important; }
-div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #C7000B !important; }
-.stSelectbox > div > div { border: 2px solid #C7000B !important; }
-.stSelectbox > div > div:hover { border-color: #9E0009 !important; }
+/* 链接 */
+a { color: #2E75B6 !important; }
+div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #1F4E79 !important; }
+.stSelectbox > div > div { border: 2px solid #1F4E79 !important; }
+.stSelectbox > div > div:hover { border-color: #2E75B6 !important; }
 /* 滚动条 */
 ::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #FFFFFF; }
-::-webkit-scrollbar-thumb { background: #C7000B; border-radius: 5px; }
+::-webkit-scrollbar-track { background: #F4F9FE; }
+::-webkit-scrollbar-thumb { background: #1F4E79; border-radius: 5px; }
+/* divider */
+hr { border-color: #B4CCE3; }
 </style>
 """, unsafe_allow_html=True)
 
