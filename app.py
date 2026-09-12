@@ -154,6 +154,29 @@ div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #1F4E7
 ::-webkit-scrollbar-thumb { background: #1F4E79; border-radius: 5px; }
 /* divider */
 hr { border-color: #B4CCE3; }
+/* title/caption 不要代码块样式 */
+div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+div[data-testid="stCaption"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+/* radio选项：选中项用淡蓝底不要深蓝块 */
+div[role="radiogroup"] label {
+  background: transparent !important;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+div[role="radiogroup"] label[aria-checked="true"],
+div[role="radiogroup"] label:has(input:checked) {
+  background: #D6E6F5 !important;
+  color: #1F4E79 !important;
+  font-weight: 700;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -414,7 +437,7 @@ def zhuhai_info(row):
     }
 
 # ---------- 界面 ----------
-st.title('🏦 积信通 · 科技企业可解释授信辅助引擎')
+st.title('积信通 · 科技企业可解释授信辅助引擎')
 st.caption('基于创新积分2.0指标体系的科创授信决策辅助工具（工行杯参赛原型）')
 
 # ---------- 可查询范围 ----------
