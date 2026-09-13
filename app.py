@@ -73,87 +73,87 @@ MODEL = os.path.join(BASE, 'models')
 
 st.set_page_config(page_title='积信通·科创授信辅助引擎', page_icon='🏦', layout='wide')
 
-# ---------- 商务蓝主题 CSS（高对比度版） ----------
+# ---------- 工行红主题 CSS（高对比度版） ----------
 st.markdown("""
 <style>
 :root {
-  --biz-blue: #1F4E79;
-  --biz-blue-mid: #2E75B6;
-  --biz-blue-light: #EAF2FA;
+  --biz-blue: #C7000B;
+  --biz-blue-mid: #E8584F;
+  --biz-blue-light: #FDE8E8;
 }
 .stApp { background: #FFFFFF; }
 /* 全局文字 */
-body, p, span, div, label { color: #1A2B3C !important; }
-h1, h2, h3 { color: #1F4E79; font-weight: 700; }
-.stCaption, small { color: #3A4A5C !important; font-size: 13px !important; }
-div[data-testid="stMarkdownContainer"] p { color: #1A2B3C; font-size: 15px; line-height: 1.7; }
-div[data-testid="stMarkdownContainer"] strong { color: #1F4E79; }
+body, p, span, div, label { color: #2A2A2A !important; }
+h1, h2, h3 { color: #C7000B; font-weight: 700; }
+.stCaption, small { color: #555555 !important; font-size: 13px !important; }
+div[data-testid="stMarkdownContainer"] p { color: #2A2A2A; font-size: 15px; line-height: 1.7; }
+div[data-testid="stMarkdownContainer"] strong { color: #C7000B; }
 /* metric卡片 */
 div[data-testid="stMetric"] {
-  background: linear-gradient(180deg, #F4F9FE 0%, #FFFFFF 100%);
-  border: 2px solid #1F4E79;
+  background: linear-gradient(180deg, #FEF5F5 0%, #FFFFFF 100%);
+  border: 2px solid #C7000B;
   border-radius: 12px;
   padding: 14px 16px;
 }
-div[data-testid="stMetric"] label { color: #1A2B3C !important; font-size: 14px !important; font-weight: 600; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #1F4E79 !important; font-weight: 800 !important; font-size: 28px !important; }
-div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #3A4A5C !important; font-size: 12px !important; }
+div[data-testid="stMetric"] label { color: #2A2A2A !important; font-size: 14px !important; font-weight: 600; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #C7000B !important; font-weight: 800 !important; font-size: 28px !important; }
+div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #555555 !important; font-size: 12px !important; }
 /* 按钮 */
 div.stButton > button {
   border-radius: 8px;
-  border: 2px solid #1F4E79;
+  border: 2px solid #C7000B;
   background: #FFFFFF;
-  color: #1F4E79 !important;
+  color: #C7000B !important;
   font-weight: 700;
   font-size: 14px;
 }
 div.stButton > button:hover {
-  background: #1F4E79 !important;
+  background: #C7000B !important;
   color: #FFFFFF !important;
 }
-/* 侧边栏：淡蓝马卡龙 */
+/* 侧边栏：淡马卡龙红 */
 section[data-testid="stSidebar"] {
-  background: #EAF2FA;
-  border-right: 2px solid #B4CCE3;
+  background: #FDE8E8;
+  border-right: 2px solid #F0C0C0;
 }
-section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #1F4E79; }
-section[data-testid="stSidebar"] .stRadio label { color: #1A2B3C; }
-section[data-testid="stSidebar"] .stMarkdownContainer p { color: #1A2B3C; }
+section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #C7000B; }
+section[data-testid="stSidebar"] .stRadio label { color: #2A2A2A; }
+section[data-testid="stSidebar"] .stMarkdownContainer p { color: #2A2A2A; }
 /* expander */
 div[data-testid="stExpander"] {
-  border: 2px solid #1F4E79;
+  border: 2px solid #C7000B;
   border-radius: 10px;
   background: #FFFFFF;
 }
 /* input框 */
 input { font-size: 16px !important; }
 /* radio/checkbox */
-div[role="radiogroup"] label, div[role="checkbox"] label { color: #1A2B3C !important; font-size: 14px; }
+div[role="radiogroup"] label, div[role="checkbox"] label { color: #2A2A2A !important; font-size: 14px; }
 /* 顶部条 */
 header[data-testid="stHeader"] { background: #FFFFFF !important; }
 .stApp > header { background: #FFFFFF !important; }
 /* 输入框 */
 input, textarea, .stTextInput input, .stTextArea textarea {
   background-color: #FFFFFF !important;
-  color: #1A2B3C !important;
-  border: 2px solid #1F4E79 !important;
+  color: #2A2A2A !important;
+  border: 2px solid #C7000B !important;
   font-size: 16px !important;
 }
 /* radio选中点 */
-div[role="radiogroup"] label div:first-child { background-color: #1F4E79 !important; }
-div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #1A2B3C; }
+div[role="radiogroup"] label div:first-child { background-color: #C7000B !important; }
+div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #2A2A2A; }
 section.main, div.main { background: #FFFFFF !important; }
 /* 链接 */
-a { color: #2E75B6 !important; }
-div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #1F4E79 !important; }
-.stSelectbox > div > div { border: 2px solid #1F4E79 !important; }
-.stSelectbox > div > div:hover { border-color: #2E75B6 !important; }
+a { color: #E8584F !important; }
+div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #C7000B !important; }
+.stSelectbox > div > div { border: 2px solid #C7000B !important; }
+.stSelectbox > div > div:hover { border-color: #E8584F !important; }
 /* 滚动条 */
 ::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #F4F9FE; }
-::-webkit-scrollbar-thumb { background: #1F4E79; border-radius: 5px; }
+::-webkit-scrollbar-track { background: #FEF5F5; }
+::-webkit-scrollbar-thumb { background: #C7000B; border-radius: 5px; }
 /* divider */
-hr { border-color: #B4CCE3; }
+hr { border-color: #F0C0C0; }
 /* title/caption 不要代码块样式 */
 div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
   background: transparent !important;
@@ -165,7 +165,7 @@ div[data-testid="stCaption"] {
   border: none !important;
   padding: 0 !important;
 }
-/* radio选项：选中项完全透明，跟侧边栏融为一体，只加粗变色 */
+/* radio选项：选中项完全透明，跟侧边栏融为一体，只加粗变红 */
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div,
@@ -178,7 +178,7 @@ section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div > 
 }
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div > div {
-  color: #1F4E79 !important;
+  color: #C7000B !important;
   font-weight: 700;
 }
 </style>
