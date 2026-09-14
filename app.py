@@ -124,13 +124,35 @@ div[data-baseweb="input"], div[data-baseweb="textarea"] {
 input:focus, textarea:focus,
 .stTextInput > div:focus-within, .stTextArea > div:focus-within,
 div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
-  border-color: #8BC8EA !important;
+  border-color: #C9CDD4 !important;
   box-shadow: none !important;
+  outline: none !important;
+}
+input:focus-visible, textarea:focus-visible,
+div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
+  outline: none !important;
 }
 /* selectbox浅色 */
 .stSelectbox > div > div {
   background-color: #FFFFFF !important;
   color: var(--text-main) !important;
+}
+/* selectbox下拉菜单浅色 */
+div[data-baseweb="popover"] ul,
+div[data-baseweb="popover"] li,
+div[role="listbox"] {
+  background-color: #FFFFFF !important;
+  color: var(--text-main) !important;
+}
+div[role="option"] {
+  color: var(--text-main) !important;
+}
+div[role="option"]:hover {
+  background-color: #F2F3F5 !important;
+}
+div[role="option"][aria-selected="true"] {
+  background-color: #EBEDF0 !important;
+  color: var(--icbc-red) !important;
 }
 div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
 /* radio圆点：未选中灰色小圆，选中红色大圆，通过大小+颜色区分 */
@@ -181,8 +203,28 @@ div.warn-box {
 }
 div.warn-box p { color: #874D00 !important; margin: 0; }
 /* dataframe表格：跟随主题，不加额外边框 */
-/* checkbox保持默认样式，只改选中文字色 */
-div[role="checkbox"] label:has(input:checked) { color: var(--icbc-red) !important; }
+/* st.table表格框线 */
+div[data-testid="stTable"] table,
+div[data-testid="stTable"] th,
+div[data-testid="stTable"] td {
+  border: 1px solid #E5E6EB !important;
+}
+div[data-testid="stTable"] th {
+  background-color: #F7F8FA !important;
+  color: var(--text-main) !important;
+  font-weight: 600;
+}
+div[data-testid="stTable"] td {
+  background-color: #FFFFFF !important;
+  color: var(--text-main) !important;
+}
+/* checkbox：未选灰色空心框，选中工行红 */
+div[role="checkbox"] label svg {
+  color: #C9CDD4 !important;
+}
+div[role="checkbox"] label:has(input:checked) svg {
+  color: var(--icbc-red) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -515,10 +557,11 @@ if mode == '企业名称查询':
             _sug = _all_names[_all_names.str.contains(q, na=False)].drop_duplicates().head(12).tolist()
             if _sug:
                 st.caption(f'🔍 匹配到 {len(_sug)} 家企业，点击直接查询：')
-                _cols = st.columns(3)
-                for i, _s in enumerate(_sug):
-                    if _cols[i % 3].button(_s, key=f'sug_{i}', use_container_width=True):
-                        st.session_state.sel_company = _s; st.rerun()
+                with st.container(height=200):
+                    _cols = st.columns(3)
+                    for i, _s in enumerate(_sug):
+                        if _cols[i % 3].button(_s, key=f'sug_{i}', use_container_width=True):
+                            st.session_state.sel_company = _s; st.rerun()
             else:
                 st.warning(f'未找到与「{q}」匹配的企业。')
     if q:
@@ -572,10 +615,10 @@ if mode == '企业名称查询':
                     st.markdown('**模型输入特征明细（11项）**')
                     fv = rep['feature_values']
                     rows = []
-                    for f in FEATURES:
+                    for idx, f in enumerate(FEATURES, 1):
                         v = fv.get(f, '')
                         unit = _FEATURE_UNITS.get(f, '')
-                        rows.append({'特征': f, '取值': f"{v:.2f}" if isinstance(v, (int, float)) else str(v), '单位': unit})
+                        rows.append({'序号': idx, '特征': f, '取值': f"{v:.2f}" if isinstance(v, (int, float)) else str(v), '单位': unit})
                     st.table(pd.DataFrame(rows))
                     st.caption('以上特征为模型实际输入值，缺失值以训练集中位数填充。')
                 with tab3:
@@ -653,27 +696,19 @@ else:
     kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
     if kw:
         view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
-    st.table(view.head(100))
+    st.table(view.head(100).reset_index(drop=True).rename_axis('序号').reset_index())
     st.caption(f'当前显示前100行（共{len(view)}家企业），用上方搜索框过滤查看全部')
     st.caption(f'当前显示 {len(view)} 家企业')
     if 'zh_sel' not in st.session_state:
         st.session_state.zh_sel = ''
     show_names = view['企业名称'].astype(str).tolist()[:50]
     if show_names:
-        if 'zh_expanded' not in st.session_state:
-            st.session_state.zh_expanded = False
-        _shown = show_names if st.session_state.zh_expanded else show_names[:10]
-        st.markdown(f'**点击企业查看画像报告**（当前列表{len(show_names)}家' + ('，显示前10家' if not st.session_state.zh_expanded else '，全部展开') + '）：')
-        _c = st.columns(3)
-        for i, n in enumerate(_shown):
-            if _c[i % 3].button(n, key=f'zh_{i}', use_container_width=True):
-                st.session_state.zh_sel = n; st.rerun()
-        if not st.session_state.zh_expanded and len(show_names) > 10:
-            if st.button(f'▼ 展开全部 {len(show_names)} 家企业', key='zh_expand_btn'):
-                st.session_state.zh_expanded = True; st.rerun()
-        elif st.session_state.zh_expanded:
-            if st.button('▲ 收起，只显示前10家', key='zh_collapse_btn'):
-                st.session_state.zh_expanded = False; st.rerun()
+        st.markdown(f'**点击企业查看画像报告**（当前列表{len(show_names)}家，列表内可上下滑动）：')
+        with st.container(height=380):
+            _c = st.columns(3)
+            for i, n in enumerate(show_names):
+                if _c[i % 3].button(n, key=f'zh_{i}', use_container_width=True):
+                    st.session_state.zh_sel = n; st.rerun()
     sel_name = st.session_state.zh_sel
     if sel_name and sel_name in view['企业名称'].astype(str).values:
         row = view[view['企业名称'] == sel_name].iloc[0]
