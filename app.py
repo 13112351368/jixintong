@@ -61,7 +61,7 @@ st.markdown("""
   --text-main: #1F2329;
   --text-sub: #646A73;
   --border: #E5E6EB;
-  --bg-side: #F7F8FA;
+  --bg-side: #EBEDF0;
   --bg-card: #FFFFFF;
 }
 .stApp { background: #FFFFFF; }
