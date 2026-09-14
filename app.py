@@ -576,7 +576,7 @@ if mode == '企业名称查询':
                         v = fv.get(f, '')
                         unit = _FEATURE_UNITS.get(f, '')
                         rows.append({'特征': f, '取值': f"{v:.2f}" if isinstance(v, (int, float)) else str(v), '单位': unit})
-                    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+                    st.table(pd.DataFrame(rows))
                     st.caption('以上特征为模型实际输入值，缺失值以训练集中位数填充。')
                 with tab3:
                     if rep['shap_summary']:
@@ -653,7 +653,8 @@ else:
     kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
     if kw:
         view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
-    st.dataframe(view, use_container_width=True, height=400)
+    st.table(view.head(100))
+    st.caption(f'当前显示前100行（共{len(view)}家企业），用上方搜索框过滤查看全部')
     st.caption(f'当前显示 {len(view)} 家企业')
     if 'zh_sel' not in st.session_state:
         st.session_state.zh_sel = ''
