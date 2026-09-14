@@ -170,6 +170,7 @@ div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !import
 ::-webkit-scrollbar-track { background: #F2F3F5; }
 ::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
 hr { border-color: var(--border); }
+header[data-testid="stHeader"] { background: #D9DCE0 !important; }
 div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
   background: transparent !important; border: none !important; padding: 0 !important;
 }
@@ -215,19 +216,23 @@ div[data-testid="stTable"] td {
   color: var(--text-main) !important;
 }
 /* checkbox：未选灰色空心框，选中工行红 — 强力覆盖 */
-div[data-testid="stCheckbox"] *,
-div[data-testid="stCheckbox"] *::before,
-div[data-testid="stCheckbox"] *::after {
+div[data-testid="stCheckbox"] *:not(span):not(p):not(label)::before,
+div[data-testid="stCheckbox"] *:not(span):not(p):not(label)::after {
   color: #C9CDD4 !important;
   border-color: #C9CDD4 !important;
   fill: #C9CDD4 !important;
   background-color: transparent !important;
 }
-div[data-testid="stCheckbox"] [aria-checked="true"] *,
-div[data-testid="stCheckbox"] input:checked ~ * {
+div[data-testid="stCheckbox"] [aria-checked="true"] *:not(span):not(p):not(label),
+div[data-testid="stCheckbox"] input:checked ~ *:not(span):not(p):not(label) {
   color: var(--icbc-red) !important;
   border-color: var(--icbc-red) !important;
   fill: var(--icbc-red) !important;
+}
+div[data-testid="stCheckbox"] label,
+div[data-testid="stCheckbox"] label span,
+div[data-testid="stCheckbox"] label p {
+  color: var(--text-main) !important;
 }
 </style>
 """, unsafe_allow_html=True)
