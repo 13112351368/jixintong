@@ -69,7 +69,8 @@ body, p, span, div, label { color: var(--text-main) !important; }
 h1, h2, h3 { color: var(--text-main); font-weight: 700; }
 .stCaption, small { color: var(--text-sub) !important; font-size: 13px !important; }
 div[data-testid="stMarkdownContainer"] p { color: var(--text-main); font-size: 15px; line-height: 1.7; }
-div[data-testid="stMarkdownContainer"] strong { color: var(--icbc-red); }
+div[data-testid="stMarkdownContainer"] strong { color: var(--text-main); }
+/* metric卡片：白底灰边，数值默认深灰，仅高风险用红 */
 div[data-testid="stMetric"] {
   background: #FFFFFF;
   border: 1px solid var(--border);
@@ -77,7 +78,7 @@ div[data-testid="stMetric"] {
   padding: 12px 14px;
 }
 div[data-testid="stMetric"] label { color: var(--text-sub) !important; font-size: 13px !important; font-weight: 500; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red) !important; font-weight: 700 !important; font-size: 26px !important; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--text-main) !important; font-weight: 700 !important; font-size: 26px !important; }
 div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: var(--text-sub) !important; font-size: 12px !important; }
 div.stButton > button {
   border-radius: 6px;
@@ -99,19 +100,47 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: var(--text-main); }
 section[data-testid="stSidebar"] .stRadio label { color: var(--text-main); }
 div[data-testid="stExpander"] {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border) !important;
   border-radius: 8px;
   background: #FFFFFF;
 }
-input, textarea, .stTextInput input, .stTextArea textarea {
+div[data-testid="stExpander"] summary {
+  background: #F7F8FA !important;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main) !important;
+}
+div[data-testid="stExpander"] summary:hover {
+  background: #F0F1F3 !important;
+}
+input, textarea, .stTextInput input, .stTextArea textarea,
+.stTextInput > div, .stTextArea > div,
+div[data-baseweb="input"], div[data-baseweb="textarea"] {
   background-color: #FFFFFF !important;
   color: var(--text-main) !important;
   border: 1px solid var(--border) !important;
   font-size: 15px !important;
+  box-shadow: none !important;
 }
-input:focus, textarea:focus { border-color: var(--icbc-red) !important; }
+input:focus, textarea:focus,
+.stTextInput > div:focus-within, .stTextArea > div:focus-within,
+div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
+  border-color: var(--icbc-red) !important;
+  box-shadow: none !important;
+}
 div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
-div[role="radiogroup"] label div:first-child { background-color: var(--icbc-red) !important; }
+/* radio甜甜圈样式：未选中=灰环空心，选中=红环空心（甜甜圈） */
+div[role="radiogroup"] label div:first-child {
+  width: 18px !important; height: 18px !important;
+  border: 2px solid #C9CDD4 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+}
+div[role="radiogroup"] label div:first-child svg { display: none !important; }
+div[role="radiogroup"] label:has(input:checked) div:first-child {
+  border: 5px solid var(--icbc-red) !important;
+  background: #FFFFFF !important;
+}
 header[data-testid="stHeader"] { background: #FFFFFF !important; }
 section.main, div.main { background: #FFFFFF !important; }
 a { color: var(--icbc-red) !important; }
@@ -149,6 +178,55 @@ div.warn-box {
   padding: 12px 16px; border-radius: 4px; margin: 8px 0;
 }
 div.warn-box p { color: #874D00 !important; margin: 0; }
+/* dataframe表格：浅色商务风 */
+div[data-testid="stDataFrame"] {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+div[data-testid="stDataFrame"] [data-testid="stDataFrameResizable"] {
+  background: #FFFFFF;
+}
+div[data-testid="stDataFrame"] table {
+  background: #FFFFFF !important;
+  color: var(--text-main) !important;
+}
+div[data-testid="stDataFrame"] thead tr,
+div[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] {
+  background: #F7F8FA !important;
+  color: var(--text-main) !important;
+}
+div[data-testid="stDataFrame"] thead th {
+  color: var(--text-main) !important;
+  border-bottom: 2px solid var(--border) !important;
+  font-weight: 600;
+}
+div[data-testid="stDataFrame"] tbody tr {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #F0F1F3;
+}
+div[data-testid="stDataFrame"] tbody tr:hover {
+  background: #F7F8FA !important;
+}
+div[data-testid="stDataFrame"] tbody td {
+  color: var(--text-main) !important;
+}
+/* dataframe里的"暂未匹配/None"等灰色文字 */
+div[data-testid="stDataFrame"] .dvn-htmlcell,
+div[data-testid="stDataFrame"] .dvn-scroller {
+  color: var(--text-main) !important;
+}
+/* checkbox勾选框：未选灰框，选中红框 */
+div[role="checkbox"] label div:first-child {
+  width: 18px !important; height: 18px !important;
+  border: 2px solid #C9CDD4 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+}
+div[role="checkbox"] label:has(input:checked) div:first-child {
+  background: var(--icbc-red) !important;
+  border-color: var(--icbc-red) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
