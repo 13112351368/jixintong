@@ -216,15 +216,15 @@ div[data-testid="stTable"] td {
   color: var(--text-main) !important;
 }
 /* checkbox：未选灰色空心框，选中工行红 — 强力覆盖 */
-div[data-testid="stCheckbox"] div[data-baseweb="checkbox"] > div:nth-of-type(1),
-div[data-testid="stCheckbox"] div[data-baseweb="checkbox"] > div:nth-of-type(1) svg {
+div[data-testid="stCheckbox"] div[data-baseweb="checkbox"] > *:not(label),
+div[data-testid="stCheckbox"] div[data-baseweb="checkbox"] > *:not(label) * {
   color: #C9CDD4 !important;
   border-color: #C9CDD4 !important;
   fill: #C9CDD4 !important;
   background: transparent !important;
 }
-div[data-testid="stCheckbox"] div[data-baseweb="checkbox"][aria-checked="true"] > div:nth-of-type(1),
-div[data-testid="stCheckbox"] div[data-baseweb="checkbox"][aria-checked="true"] > div:nth-of-type(1) svg {
+div[data-testid="stCheckbox"] div[data-baseweb="checkbox"][aria-checked="true"] > *:not(label),
+div[data-testid="stCheckbox"] div[data-baseweb="checkbox"][aria-checked="true"] > *:not(label) * {
   color: var(--icbc-red) !important;
   border-color: var(--icbc-red) !important;
   fill: var(--icbc-red) !important;
