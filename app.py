@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 积信通 - 科技企业可解释授信辅助引擎（Streamlit原型）v2.0
 运行: streamlit run app.py
@@ -124,14 +124,20 @@ div[data-baseweb="input"], div[data-baseweb="textarea"] {
 input:focus, textarea:focus,
 .stTextInput > div:focus-within, .stTextArea > div:focus-within,
 div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
-  border-color: var(--icbc-red) !important;
+  border-color: #8BC8EA !important;
   box-shadow: none !important;
 }
 div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
-/* radio选中色用工行红，圆点保持Streamlit默认样式避免布局崩坏 */
+/* radio圆点：未选中灰色小圆，选中红色大圆，通过大小+颜色区分 */
+div[role="radiogroup"] label svg {
+  width: 14px !important; height: 14px !important;
+  color: #C9CDD4 !important;
+}
+div[role="radiogroup"] label:has(input:checked) svg {
+  width: 18px !important; height: 18px !important;
+  color: var(--icbc-red) !important;
+}
 div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !important; }
-div[role="radiogroup"] label:has(input:checked) span,
-div[role="radiogroup"] label:has(input:checked) div { color: var(--icbc-red) !important; }
 header[data-testid="stHeader"] { background: #FFFFFF !important; }
 section.main, div.main { background: #FFFFFF !important; }
 a { color: var(--icbc-red) !important; }
@@ -169,39 +175,10 @@ div.warn-box {
   padding: 12px 16px; border-radius: 4px; margin: 8px 0;
 }
 div.warn-box p { color: #874D00 !important; margin: 0; }
-/* dataframe表格：浅色商务风（覆盖glide-data-grid深色主题） */
+/* dataframe表格：浅色边框，不强制覆盖内部主题避免内容丢失 */
 div[data-testid="stDataFrame"] {
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: hidden;
-}
-div[data-testid="stDataFrame"] .dvn-scroller,
-div[data-testid="stDataFrame"] .dvn-summary-row,
-div[data-testid="stDataFrame"] [data-testid="stDataFrameResizable"] {
-  background: #FFFFFF !important;
-  color: var(--text-main) !important;
-}
-div[data-testid="stDataFrame"] .dvn-header-container,
-div[data-testid="stDataFrame"] .dvn-header {
-  background: #F7F8FA !important;
-  color: var(--text-main) !important;
-}
-div[data-testid="stDataFrame"] .dvn-row,
-div[data-testid="stDataFrame"] .dvn-cell {
-  background: #FFFFFF !important;
-  color: var(--text-main) !important;
-  border-bottom: 1px solid #F0F1F3 !important;
-}
-div[data-testid="stDataFrame"] .dvn-row:hover,
-div[data-testid="stDataFrame"] .dvn-row:hover .dvn-cell {
-  background: #F7F8FA !important;
-}
-div[data-testid="stDataFrame"] .dvn-header .dvn-cell,
-div[data-testid="stDataFrame"] .dvn-header-container .dvn-cell {
-  color: var(--text-main) !important;
-  font-weight: 600 !important;
-  background: #F7F8FA !important;
-  border-bottom: 2px solid var(--border) !important;
 }
 /* checkbox保持默认样式，只改选中文字色 */
 div[role="checkbox"] label:has(input:checked) { color: var(--icbc-red) !important; }
@@ -502,15 +479,15 @@ with st.sidebar:
     st.header('⚙️ 查询设置')
     mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
     st.divider()
-    with st.expander('模型信息', expanded=False):
+    with st.expander('模型信息', expanded=True):
         st.caption(
-            f"版本 {MODEL_META['版本']} ｜ {MODEL_META['训练时间']}\n\n"
+            f"版本 {MODEL_META['版本']} ｜ {MODEL_META['训练时间']}　"
             f"样本 {MODEL_META['训练样本']}\n\n"
-            f"特征 {MODEL_META['特征数量']}\n\n"
-            f"标签：{MODEL_META['标签定义']}\n\n"
-            f"OOT：{MODEL_META['OOT测试期']}\n\n"
-            f"AUC {MODEL_META['融合AUC']} ｜ 准确率 {MODEL_META['准确率']}\n\n"
-            f"KS {MODEL_META['KS']} ｜ PR-AUC {MODEL_META['PR-AUC']}"
+            f"特征 {MODEL_META['特征数量']}　"
+            f"OOT {MODEL_META['OOT测试期']}\n\n"
+            f"AUC {MODEL_META['融合AUC']} ｜ 准确率 {MODEL_META['准确率']}　"
+            f"KS {MODEL_META['KS']}\n\n"
+            f"标签：{MODEL_META['标签定义']}"
         )
     st.divider()
     st.caption('注：本工具输出为模型参考值，不构成最终授信决策。')
@@ -520,11 +497,11 @@ if mode == '企业名称查询':
         st.session_state.sel_company = ''
     st.markdown('<h3 style="color:var(--text-main);font-size:16px;margin:8px 0;">🎯 演示案例（答辩直接点击）</h3>', unsafe_allow_html=True)
     _dc1, _dc2, _dc3 = st.columns(3)
-    if _dc1.button('🌟 案例A：立讯精密（A股龙头）', width='stretch'):
+    if _dc1.button('🌟 案例A：立讯精密（A股龙头）', use_container_width=True):
         st.session_state.sel_company = '立讯精密'; st.rerun()
-    if _dc2.button('📊 案例B：深科技（A股）', width='stretch'):
+    if _dc2.button('📊 案例B：深科技（A股）', use_container_width=True):
         st.session_state.sel_company = '深科技'; st.rerun()
-    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地）', width='stretch'):
+    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地）', use_container_width=True):
         st.session_state.sel_company = '格力大金'; st.rerun()
     q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company, placeholder='如：立讯精密 或 格力')
     q = q.strip()
@@ -535,7 +512,7 @@ if mode == '企业名称查询':
             st.caption(f'🔍 匹配到 {len(_sug)} 家企业，点击直接查询：')
             _cols = st.columns(3)
             for i, _s in enumerate(_sug):
-                if _cols[i % 3].button(_s, key=f'sug_{i}', width='stretch'):
+                if _cols[i % 3].button(_s, key=f'sug_{i}', use_container_width=True):
                     st.session_state.sel_company = _s; st.rerun()
         else:
             st.warning(f'未找到与「{q}」匹配的企业。')
@@ -577,7 +554,7 @@ if mode == '企业名称查询':
                             paper_bgcolor='#FFFFFF', plot_bgcolor='#FFFFFF',
                             font=dict(color='#1F2329', size=12)
                         )
-                        st.plotly_chart(_gauge, width='stretch')
+                        st.plotly_chart(_gauge, use_container_width=True)
                         st.markdown(f'**授信动作建议**：{rep["action"]}')
                         st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
                         st.markdown('**工行产品预匹配**')
@@ -594,7 +571,7 @@ if mode == '企业名称查询':
                         v = fv.get(f, '')
                         unit = _FEATURE_UNITS.get(f, '')
                         rows.append({'特征': f, '取值': f"{v:.2f}" if isinstance(v, (int, float)) else str(v), '单位': unit})
-                    st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+                    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
                     st.caption('以上特征为模型实际输入值，缺失值以训练集中位数填充。')
                 with tab3:
                     if rep['shap_summary']:
@@ -671,7 +648,7 @@ else:
     kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
     if kw:
         view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
-    st.dataframe(view, width='stretch', height=400)
+    st.dataframe(view, use_container_width=True, height=400)
     st.caption(f'当前显示 {len(view)} 家企业')
     if 'zh_sel' not in st.session_state:
         st.session_state.zh_sel = ''
@@ -683,11 +660,14 @@ else:
         st.markdown(f'**点击企业查看画像报告**（当前列表{len(show_names)}家' + ('，显示前10家' if not st.session_state.zh_expanded else '，全部展开') + '）：')
         _c = st.columns(3)
         for i, n in enumerate(_shown):
-            if _c[i % 3].button(n, key=f'zh_{i}', width='stretch'):
+            if _c[i % 3].button(n, key=f'zh_{i}', use_container_width=True):
                 st.session_state.zh_sel = n; st.rerun()
         if not st.session_state.zh_expanded and len(show_names) > 10:
             if st.button(f'▼ 展开全部 {len(show_names)} 家企业', key='zh_expand_btn'):
                 st.session_state.zh_expanded = True; st.rerun()
+        elif st.session_state.zh_expanded:
+            if st.button('▲ 收起，只显示前10家', key='zh_collapse_btn'):
+                st.session_state.zh_expanded = False; st.rerun()
     sel_name = st.session_state.zh_sel
     if sel_name and sel_name in view['企业名称'].astype(str).values:
         row = view[view['企业名称'] == sel_name].iloc[0]
@@ -721,3 +701,4 @@ with st.expander('📋 数据来源与合规说明（点击展开）', expanded=
 
 **合规声明**：本工具所有数据均来自**公开渠道**，不涉及工商银行内部客户数据；输出为模型参考值，不构成最终授信决策，实际审批以银行尽调为准。
 """)
+
