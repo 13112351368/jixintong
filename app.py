@@ -219,11 +219,17 @@ div[data-testid="stTable"] td {
   color: var(--text-main) !important;
 }
 /* checkbox：未选灰色空心框，选中工行红 */
+div[role="checkbox"] label div:first-child,
 div[role="checkbox"] label svg {
   color: #C9CDD4 !important;
+  border-color: #C9CDD4 !important;
+  fill: #C9CDD4 !important;
 }
+div[role="checkbox"] label:has(input:checked) div:first-child,
 div[role="checkbox"] label:has(input:checked) svg {
   color: var(--icbc-red) !important;
+  border-color: var(--icbc-red) !important;
+  fill: var(--icbc-red) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -696,19 +702,30 @@ else:
     kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
     if kw:
         view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
-    st.table(view.head(100).reset_index(drop=True).rename_axis('序号').reset_index())
+    _view_tbl = view.head(100).reset_index(drop=True)
+    _view_tbl.insert(0, '序号', range(1, len(_view_tbl)+1))
+    with st.container(height=400):
+        st.table(_view_tbl)
     st.caption(f'当前显示前100行（共{len(view)}家企业），用上方搜索框过滤查看全部')
     st.caption(f'当前显示 {len(view)} 家企业')
     if 'zh_sel' not in st.session_state:
         st.session_state.zh_sel = ''
     show_names = view['企业名称'].astype(str).tolist()[:50]
     if show_names:
-        st.markdown(f'**点击企业查看画像报告**（当前列表{len(show_names)}家，列表内可上下滑动）：')
-        with st.container(height=380):
-            _c = st.columns(3)
-            for i, n in enumerate(show_names):
-                if _c[i % 3].button(n, key=f'zh_{i}', use_container_width=True):
-                    st.session_state.zh_sel = n; st.rerun()
+        if 'zh_expanded' not in st.session_state:
+            st.session_state.zh_expanded = False
+        _shown = show_names if st.session_state.zh_expanded else show_names[:10]
+        st.markdown(f'**点击企业查看画像报告**（当前列表{len(show_names)}家' + ('，全部展开' if st.session_state.zh_expanded else '，显示前10家') + '）：')
+        _c = st.columns(3)
+        for i, n in enumerate(_shown):
+            if _c[i % 3].button(n, key=f'zh_{i}', use_container_width=True):
+                st.session_state.zh_sel = n; st.rerun()
+        if not st.session_state.zh_expanded and len(show_names) > 10:
+            if st.button(f'▼ 展开全部 {len(show_names)} 家企业', key='zh_expand_btn'):
+                st.session_state.zh_expanded = True; st.rerun()
+        elif st.session_state.zh_expanded:
+            if st.button('▲ 收起，只显示前10家', key='zh_collapse_btn'):
+                st.session_state.zh_expanded = False; st.rerun()
     sel_name = st.session_state.zh_sel
     if sel_name and sel_name in view['企业名称'].astype(str).values:
         row = view[view['企业名称'] == sel_name].iloc[0]
