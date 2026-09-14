@@ -127,6 +127,11 @@ div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-withi
   border-color: #8BC8EA !important;
   box-shadow: none !important;
 }
+/* selectbox浅色 */
+.stSelectbox > div > div {
+  background-color: #FFFFFF !important;
+  color: var(--text-main) !important;
+}
 div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
 /* radio圆点：未选中灰色小圆，选中红色大圆，通过大小+颜色区分 */
 div[role="radiogroup"] label svg {
@@ -175,11 +180,7 @@ div.warn-box {
   padding: 12px 16px; border-radius: 4px; margin: 8px 0;
 }
 div.warn-box p { color: #874D00 !important; margin: 0; }
-/* dataframe表格：浅色边框，不强制覆盖内部主题避免内容丢失 */
-div[data-testid="stDataFrame"] {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
+/* dataframe表格：跟随主题，不加额外边框 */
 /* checkbox保持默认样式，只改选中文字色 */
 div[role="checkbox"] label:has(input:checked) { color: var(--icbc-red) !important; }
 </style>
@@ -502,20 +503,24 @@ if mode == '企业名称查询':
     if _dc2.button('📊 案例B：深科技（A股）', use_container_width=True):
         st.session_state.sel_company = '深科技'; st.rerun()
     if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地）', use_container_width=True):
-        st.session_state.sel_company = '格力大金'; st.rerun()
+        st.session_state.sel_company = '珠海格力大金机电设备有限公司'; st.rerun()
     q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company, placeholder='如：立讯精密 或 格力')
     q = q.strip()
     if q:
         _all_names = pd.concat([train['企业名称'], zhuhai['企业名称']]).astype(str).str.strip()
-        _sug = _all_names[_all_names.str.contains(q, na=False)].drop_duplicates().head(12).tolist()
-        if _sug:
-            st.caption(f'🔍 匹配到 {len(_sug)} 家企业，点击直接查询：')
-            _cols = st.columns(3)
-            for i, _s in enumerate(_sug):
-                if _cols[i % 3].button(_s, key=f'sug_{i}', use_container_width=True):
-                    st.session_state.sel_company = _s; st.rerun()
+        _exact = _all_names[_all_names == q].unique()
+        if len(_exact) == 1:
+            pass  # 精确匹配唯一一家，不弹推荐
         else:
-            st.warning(f'未找到与「{q}」匹配的企业。')
+            _sug = _all_names[_all_names.str.contains(q, na=False)].drop_duplicates().head(12).tolist()
+            if _sug:
+                st.caption(f'🔍 匹配到 {len(_sug)} 家企业，点击直接查询：')
+                _cols = st.columns(3)
+                for i, _s in enumerate(_sug):
+                    if _cols[i % 3].button(_s, key=f'sug_{i}', use_container_width=True):
+                        st.session_state.sel_company = _s; st.rerun()
+            else:
+                st.warning(f'未找到与「{q}」匹配的企业。')
     if q:
         train_hits = train[train['企业名称'].str.contains(q, na=False)]
         zhuhai_hits = zhuhai[zhuhai['企业名称'].str.contains(q, na=False)]
