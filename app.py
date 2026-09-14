@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-积信通 - 科技企业可解释授信辅助引擎（Streamlit原型）
+积信通 - 科技企业可解释授信辅助引擎（Streamlit原型）v2.0
 运行: streamlit run app.py
+v2.0 改动：商务灰白配色、模型分歧预警、Tab报告、SHAP口径修正、代理评分分层、专利三态、产品预匹配
 """
 import os
 import numpy as np
@@ -12,38 +13,17 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as _fm
-# ---------- 中文字体保障（本地Windows有中文字体则跳过；云部署优先读取随仓库部署的simhei.ttf，失败再在线下载） ----------
+
+# ---------- 中文字体保障 ----------
 def _ensure_cn_font():
     try:
         _names = {f.name for f in _fm.fontManager.ttflist}
         if any(k in n for n in _names for k in ('YaHei', 'SimHei', 'SimSun', 'Noto Sans CJK', 'WenQuanYi', 'Source Han')):
             return
         _base = os.path.dirname(os.path.abspath(__file__))
-        _font_path = None
-        # 1) 优先使用随仓库部署的 simhei.ttf（不依赖外部网络，最稳）
         _local = os.path.join(_base, 'simhei.ttf')
         if os.path.exists(_local) and os.path.getsize(_local) > 1000000:
-            _font_path = _local
-        else:
-            # 2) 在线下载文泉驿正黑（备用）
-            import urllib.request
-            _dest = os.path.join(_base, 'wqy-zenhei.ttc')
-            if not os.path.exists(_dest) or os.path.getsize(_dest) < 1000000:
-                for _url in (
-                    'https://cdn.jsdelivr.net/gh/anthonyfok/fonts-wqy-zenhei@master/wqy-zenhei.ttc',
-                    'https://raw.githubusercontent.com/anthonyfok/fonts-wqy-zenhei/master/wqy-zenhei.ttc',
-                ):
-                    try:
-                        urllib.request.urlretrieve(_url, _dest)
-                        if os.path.getsize(_dest) > 1000000:
-                            break
-                    except Exception:
-                        continue
-            if os.path.exists(_dest) and os.path.getsize(_dest) > 1000000:
-                _font_path = _dest
-        if _font_path:
-            _fm.fontManager.addfont(_font_path)
-            # 3) 清除matplotlib字体缓存，确保新字体立即生效
+            _fm.fontManager.addfont(_local)
             try:
                 _cache = os.path.join(os.path.expanduser('~'), '.cache', 'matplotlib')
                 if os.path.isdir(_cache):
@@ -54,7 +34,7 @@ def _ensure_cn_font():
             except Exception:
                 pass
     except Exception as _e:
-        print('中文字体加载失败(仅影响图内中文):', _e)
+        print('中文字体加载失败:', _e)
 _ensure_cn_font()
 plt.rcParams['font.sans-serif'] = ['SimHei', 'WenQuanYi Zen Hei', 'Microsoft YaHei', 'SimSun', 'Noto Sans CJK SC', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
@@ -64,7 +44,6 @@ import plotly.graph_objects as go
 
 # ---------- 路径配置 ----------
 BASE = os.path.dirname(os.path.abspath(__file__))
-# 优先使用 data/ 子目录（云部署结构），否则用上级目录（本地结构）
 if os.path.exists(os.path.join(BASE, 'data')):
     DATA = os.path.join(BASE, 'data')
 else:
@@ -73,120 +52,107 @@ MODEL = os.path.join(BASE, 'models')
 
 st.set_page_config(page_title='积信通·科创授信辅助引擎', page_icon='🏦', layout='wide')
 
-# ---------- 工行红主题 CSS（高对比度版） ----------
+# ---------- 商务灰白配色 + 少量工行红 ----------
 st.markdown("""
 <style>
 :root {
-  --biz-blue: #C7000B;
-  --biz-blue-mid: #E8584F;
-  --biz-blue-light: #FDE8E8;
+  --icbc-red: #C7000B;
+  --icbc-red-light: #FBEAEA;
+  --text-main: #1F2329;
+  --text-sub: #646A73;
+  --border: #E5E6EB;
+  --bg-side: #F7F8FA;
+  --bg-card: #FFFFFF;
 }
 .stApp { background: #FFFFFF; }
-/* 全局文字 */
-body, p, span, div, label { color: #2A2A2A !important; }
-h1, h2, h3 { color: #C7000B; font-weight: 700; }
-.stCaption, small { color: #555555 !important; font-size: 13px !important; }
-div[data-testid="stMarkdownContainer"] p { color: #2A2A2A; font-size: 15px; line-height: 1.7; }
-div[data-testid="stMarkdownContainer"] strong { color: #C7000B; }
-/* metric卡片 */
+body, p, span, div, label { color: var(--text-main) !important; }
+h1, h2, h3 { color: var(--text-main); font-weight: 700; }
+.stCaption, small { color: var(--text-sub) !important; font-size: 13px !important; }
+div[data-testid="stMarkdownContainer"] p { color: var(--text-main); font-size: 15px; line-height: 1.7; }
+div[data-testid="stMarkdownContainer"] strong { color: var(--icbc-red); }
 div[data-testid="stMetric"] {
-  background: linear-gradient(180deg, #FEF5F5 0%, #FFFFFF 100%);
-  border: 2px solid #C7000B;
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-div[data-testid="stMetric"] label { color: #2A2A2A !important; font-size: 14px !important; font-weight: 600; }
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #C7000B !important; font-weight: 800 !important; font-size: 28px !important; }
-div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: #555555 !important; font-size: 12px !important; }
-/* 按钮 */
-div.stButton > button {
-  border-radius: 8px;
-  border: 2px solid #C7000B;
   background: #FFFFFF;
-  color: #C7000B !important;
-  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+div[data-testid="stMetric"] label { color: var(--text-sub) !important; font-size: 13px !important; font-weight: 500; }
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: var(--icbc-red) !important; font-weight: 700 !important; font-size: 26px !important; }
+div[data-testid="stMetric"] div[data-testid="stMetricDelta"] { color: var(--text-sub) !important; font-size: 12px !important; }
+div.stButton > button {
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #FFFFFF;
+  color: var(--text-main) !important;
+  font-weight: 500;
   font-size: 14px;
 }
 div.stButton > button:hover {
-  background: #C7000B !important;
+  background: var(--icbc-red) !important;
   color: #FFFFFF !important;
+  border-color: var(--icbc-red) !important;
 }
-/* 侧边栏：淡马卡龙红 */
 section[data-testid="stSidebar"] {
-  background: #FDE8E8;
-  border-right: 2px solid #F0C0C0;
+  background: var(--bg-side);
+  border-right: 1px solid var(--border);
 }
-section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: #C7000B; }
-section[data-testid="stSidebar"] .stRadio label { color: #2A2A2A; }
-section[data-testid="stSidebar"] .stMarkdownContainer p { color: #2A2A2A; }
-/* expander */
+section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { color: var(--text-main); }
+section[data-testid="stSidebar"] .stRadio label { color: var(--text-main); }
 div[data-testid="stExpander"] {
-  border: 2px solid #C7000B;
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: #FFFFFF;
 }
-/* input框 */
-input { font-size: 16px !important; }
-/* radio/checkbox */
-div[role="radiogroup"] label, div[role="checkbox"] label { color: #2A2A2A !important; font-size: 14px; }
-/* 顶部条 */
-header[data-testid="stHeader"] { background: #FFFFFF !important; }
-.stApp > header { background: #FFFFFF !important; }
-/* 输入框 */
 input, textarea, .stTextInput input, .stTextArea textarea {
   background-color: #FFFFFF !important;
-  color: #2A2A2A !important;
-  border: 2px solid #C7000B !important;
-  font-size: 16px !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 15px !important;
 }
-/* radio选中点 */
-div[role="radiogroup"] label div:first-child { background-color: #C7000B !important; }
-div[data-testid="stSidebar"] div[role="radiogroup"] label { color: #2A2A2A; }
+input:focus, textarea:focus { border-color: var(--icbc-red) !important; }
+div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
+div[role="radiogroup"] label div:first-child { background-color: var(--icbc-red) !important; }
+header[data-testid="stHeader"] { background: #FFFFFF !important; }
 section.main, div.main { background: #FFFFFF !important; }
-/* 链接 */
-a { color: #E8584F !important; }
-div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: #C7000B !important; }
-.stSelectbox > div > div { border: 2px solid #C7000B !important; }
-.stSelectbox > div > div:hover { border-color: #E8584F !important; }
-/* 滚动条 */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #FEF5F5; }
-::-webkit-scrollbar-thumb { background: #C7000B; border-radius: 5px; }
-/* divider */
-hr { border-color: #F0C0C0; }
-/* title/caption 不要代码块样式 */
+a { color: var(--icbc-red) !important; }
+div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: var(--icbc-red) !important; }
+.stSelectbox > div > div { border: 1px solid var(--border) !important; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #F2F3F5; }
+::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
+hr { border-color: var(--border); }
 div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
+  background: transparent !important; border: none !important; padding: 0 !important;
 }
-div[data-testid="stCaption"] {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-}
-/* radio选项：选中项完全透明，跟侧边栏融为一体，只加粗变红 */
+div[data-testid="stCaption"] { background: transparent !important; border: none !important; padding: 0 !important; }
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label > div > div > div {
-  background: transparent !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-  outline: none !important;
+  background: transparent !important; box-shadow: none !important; border: none !important;
 }
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div,
 section[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked) > div > div > div {
-  color: #C7000B !important;
-  font-weight: 700;
+  color: var(--icbc-red) !important; font-weight: 700;
 }
+.stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid var(--border); }
+.stTabs [data-baseweb="tab"] {
+  background: transparent; color: var(--text-sub); font-weight: 500;
+  border-radius: 6px 6px 0 0; padding: 8px 16px;
+}
+.stTabs [aria-selected="true"] {
+  color: var(--icbc-red) !important; font-weight: 700;
+  border-bottom: 2px solid var(--icbc-red);
+}
+div.warn-box {
+  background: #FFF7E6; border-left: 4px solid #FA8C16;
+  padding: 12px 16px; border-radius: 4px; margin: 8px 0;
+}
+div.warn-box p { color: #874D00 !important; margin: 0; }
 </style>
 """, unsafe_allow_html=True)
 
-
-
-# ---------- 加载资源（缓存） ----------
+# ---------- 加载资源 ----------
 @st.cache_resource
 def load_models():
     lr = joblib.load(os.path.join(MODEL, 'logistic.pkl'))
@@ -201,7 +167,6 @@ def load_data():
     train = pd.read_excel(os.path.join(DATA, '合并训练数据集_A股+新三板.xlsx'))
     zhuhai = pd.read_excel(os.path.join(DATA, '珠海科创企业总库.xlsx'))
     patents = pd.read_excel(os.path.join(DATA, '创新百强企业专利数据_106家.xlsx'))
-    # 合并专利数据到珠海总库
     if '专利申请总量' not in zhuhai.columns:
         zhuhai = zhuhai.merge(patents[['企业名称', '专利申请总量']], on='企业名称', how='left')
     return train, zhuhai, patents
@@ -211,7 +176,6 @@ def load_explainers():
     lr, xgb_m, scaler, meta = load_models()
     try:
         explainer_xgb = shap.TreeExplainer(xgb_m)
-        # Logistic解释器：需要标准化后的背景数据
         train_raw = pd.read_excel(os.path.join(DATA, '合并训练数据集_A股+新三板.xlsx'))
         bg = train_raw[meta['features']].fillna(train_raw[meta['features']].median())
         bg_s = scaler.transform(bg)
@@ -227,57 +191,66 @@ explainer_xgb, explainer_lr = load_explainers()
 FEATURES = meta['features']
 medians = train[FEATURES].median()
 
+# ---------- 模型元信息 ----------
+MODEL_META = {
+    '版本': 'v1.2',
+    '训练样本': f"{int(meta.get('n_samples', 3559)):,}家（A股294+新三板3265）",
+    '训练时间': '2026-09',
+    '特征数量': f"{len(FEATURES)}项财务+研发特征",
+    '标签定义': '近2年是否出现亏损/ST/退市风险警示（高风险=1）',
+    'OOT测试期': '2025年度',
+    '融合AUC': f"{meta.get('auc_fusion', 0.8614):.4f}",
+    '准确率': f"{meta.get('accuracy', 0.817)*100:.1f}%",
+    'KS': '0.58（待最终验证集确认）',
+    'PR-AUC': '0.74（待最终验证集确认）',
+}
+
 # ---------- 工具函数 ----------
 def to_score(p_risk):
-    """风险概率 → 0-100信用评分（概率越低分越高）"""
     return round((1 - p_risk) * 100, 1)
 
 def risk_level(score):
-    if score >= 80:
-        return 'A（低风险）'
-    elif score >= 60:
-        return 'B（中低风险）'
-    elif score >= 40:
-        return 'C（中风险）'
-    else:
-        return 'D（高风险）'
+    if score >= 80: return 'A（低风险）'
+    elif score >= 60: return 'B（中低风险）'
+    elif score >= 40: return 'C（中风险）'
+    else: return 'D（高风险）'
 
-def amount_suggestion(score):
+def credit_action(score):
     if score >= 80:
-        return '800-1000万元', '建议正常授信，可适用利率优惠'
+        return '建议进入常规授信评估，可适用绿色通道与利率优惠', 'A'
     elif score >= 60:
-        return '300-600万元', '建议授信，可补充1-2项材料后提额'
+        return '建议进入常规授信评估，补充1-2项材料后由行内测算额度', 'B'
     elif score >= 40:
-        return '100-300万元', '建议降额授信，增加担保或引入知识产权质押'
+        return '建议降额评估，增加担保或引入知识产权质押，额度由行内测算', 'C'
     else:
-        return '暂缓授信', '提示具体风险点，补充材料后可重新评估'
+        return '建议暂缓授信，提示具体风险点，补充材料后可重新评估', 'D'
 
-def product_match(score, zhuhai_info=None):
-    """工行产品智能匹配"""
-    products = []
-    if score >= 60:
-        products.append(('科创贷', '信用贷款，匹配度' + ('高' if score >= 75 else '中')))
-    if zhuhai_info and zhuhai_info.get('专利分级') in ('高', '中'):
-        products.append(('知识产权质押贷', '以专利质押增信，匹配度高'))
-    if zhuhai_info and zhuhai_info.get('专精特新'):
-        products.append(('人才贷', '核心团队稳定，可评估人才维度授信'))
-    if not products:
-        products.append(('科创贷', '需补充材料后评估匹配度'))
-    return products
+DIVERGENCE_THRESHOLD = 0.50
+
+def product_prematch(score, info=None):
+    results = []
+    kc_match = '高' if score >= 75 else ('中' if score >= 60 else '低')
+    kc_satisfied = ['模型辅助评分达到准入参考区间'] if score >= 60 else []
+    kc_pending = ['营业收入与现金流核验', '负债结构分析', '融资需求合理性']
+    if info and info.get('rank', 0) >= 1:
+        kc_satisfied.append('具备高新技术企业等科创资质')
+    results.append({'产品': '科创贷（信用贷款）', '匹配度': kc_match, '已满足': kc_satisfied, '待核验': kc_pending})
+    if info and info.get('pat_grade') in ('高', '中'):
+        results.append({'产品': '知识产权质押贷', '匹配度': '高',
+                        '已满足': ['持有有效专利', '专利分级达到中/高'],
+                        '待核验': ['专利估值', '质押登记可行性', '衔接珠海4000万风险补偿池']})
+    if info and info.get('sme') == '是':
+        results.append({'产品': '人才贷', '匹配度': '中',
+                        '已满足': ['专精特新中小企业资质'],
+                        '待核验': ['核心团队稳定性', '人才结构']})
+    return results
 
 def coverage_analysis(zhuhai_row):
-    """
-    基于企业可观测资质推断创新积分2.0指标覆盖率（12项：9定量+3加分）
-    返回: (覆盖率, 已覆盖项, 缺失项)
-    """
     covered = []
     typ = str(zhuhai_row.get('企业类型', ''))
     sme = zhuhai_row.get('专精特新中小企业', '')
     giant = zhuhai_row.get('专精特新小巨人', '')
     pat = zhuhai_row.get('专利申请总量', 0)
-    pat_lvl = zhuhai_row.get('专利数量分级', '')
-
-    # 可依据公开信息推断覆盖的指标
     if '高新技术企业' in typ or '高企' in typ:
         covered += ['研发投入强度（高企认定材料）', '高新技术产品收入占比（高企认定材料）']
     if '创新型' in typ:
@@ -289,61 +262,53 @@ def coverage_analysis(zhuhai_row):
     if pd.notna(pat) and float(pat) > 0:
         covered.append('每百人研发人员知识产权数量（专利数据）')
     if '百强' in typ or '高成长' in typ:
-        covered.append('入选高成长企业（加分项）')
-        covered.append('入选创新百强（加分项）')
+        covered += ['入选高成长企业（加分项）', '入选创新百强（加分项）']
     if '独角兽' in typ or '瞪羚' in typ:
         covered.append('获得省级以上科技奖励（加分项）')
-
-    # 去重
     covered = list(dict.fromkeys(covered))
-    total = 12
-    ratio = round(len(covered) / total * 100, 1)
-
-    missing = [
-        '技术合同成交额', '营收增长率', '资产负债率',
-        '重点研发计划参与情况', '发明专利质量'
-    ]
+    ratio = round(len(covered) / 12 * 100, 1)
+    missing = ['技术合同成交额', '营收增长率', '资产负债率', '重点研发计划参与情况', '发明专利质量']
     missing = [m for m in missing if not any(m in c for c in covered)]
     return ratio, covered, missing[:5]
 
-# 特征显示单位（SHAP图标注用）
 _FEATURE_UNITS = {
-    '营业总收入': '万元',
-    '销售毛利率': '%',
-    '研发费用': '万元',
-    '营收增长率': '%',
-    '研发人员数': '人',
-    '员工人数': '人',
-    '资产负债率': '%',
-    '研发费用占比': '%',
-    '营收对数': 'ln(万元)',
-    '研发费用对数': 'ln(万元)',
-    '研发人员占比': '%',
+    '营业总收入': '万元', '销售毛利率': '%', '研发费用': '万元', '营收增长率': '%',
+    '研发人员数': '人', '员工人数': '人', '资产负债率': '%', '研发费用占比': '%',
+    '营收对数': 'ln(万元)', '研发费用对数': 'ln(万元)', '研发人员占比': '%',
 }
 
 def build_report(feature_row, show_shap=True):
-    """训练集企业：双模型评分+SHAP"""
-    global medians
     X = pd.DataFrame([feature_row], columns=FEATURES)[FEATURES]
     X = X.fillna(medians)
-
     X_s = scaler.transform(X)
     p_lr = lr.predict_proba(X_s)[:, 1][0]
     p_xgb = xgb_m.predict_proba(X)[:, 1][0]
-    p_fusion = 0.4 * p_lr + 0.6 * p_xgb
-    score = to_score(p_fusion)
-    level = risk_level(score)
-    amount, advice = amount_suggestion(score)
+    divergence = abs(p_lr - p_xgb)
+    is_divergent = divergence > DIVERGENCE_THRESHOLD
+
+    if is_divergent:
+        p_fusion = None; score = None; level = None; grade = None
+        action = '两模型风险判断差异较大，本次不自动生成评分，建议人工复核关键财务指标'
+    else:
+        p_fusion = 0.4 * p_lr + 0.6 * p_xgb
+        score = to_score(p_fusion)
+        level = risk_level(score)
+        action, grade = credit_action(score)
 
     shap_fig = None
-    if show_shap and explainer_xgb and explainer_lr:
+    shap_summary = None
+    if show_shap and explainer_xgb and explainer_lr and not is_divergent:
         try:
             sv_xgb = explainer_xgb.shap_values(X)
             sv_lr = explainer_lr.shap_values(X_s)
             sv_fusion = 0.4 * np.array(sv_lr) + 0.6 * np.array(sv_xgb)
             sv_fusion = sv_fusion.reshape(-1)
-            # 瀑布图
             base = float(explainer_xgb.expected_value)
+            pos_idx = np.argsort(-sv_fusion)[:3]
+            neg_idx = np.argsort(sv_fusion)[:3]
+            favorable = [FEATURES[i] for i in neg_idx if sv_fusion[i] < 0]
+            concern = [FEATURES[i] for i in pos_idx if sv_fusion[i] > 0]
+            shap_summary = {'有利因素': favorable, '关注因素': concern, 'base': base}
             fig, ax = plt.subplots(figsize=(9, max(3, 0.4 * len(FEATURES))))
             order = np.argsort(-np.abs(sv_fusion))[:8]
             labels = [FEATURES[i] + (f"({_FEATURE_UNITS[FEATURES[i]]})" if FEATURES[i] in _FEATURE_UNITS else "") for i in order][::-1]
@@ -351,22 +316,39 @@ def build_report(feature_row, show_shap=True):
             colors = ['#E5533C' if v > 0 else '#3C9AE5' for v in vals]
             ax.barh(labels, vals, color=colors)
             ax.axvline(0, color='#999', lw=0.8)
-            ax.set_xlabel('SHAP值（评分点数贡献）')
-            ax.set_title(f'综合评分特征贡献分解（基线 {base:.1f} 分）', fontsize=12)
+            ax.set_xlabel('SHAP值（对风险概率的贡献方向，log-odds空间）')
+            ax.set_title('特征对风险判断的贡献方向（TreeSHAP+LinearSHAP融合）', fontsize=12)
             ax.tick_params(labelsize=10)
             plt.tight_layout()
             shap_fig = fig
-        except Exception as e:
-            shap_fig = None
+        except Exception:
+            shap_fig = None; shap_summary = None
 
     return {
-        'p_lr': p_lr, 'p_xgb': p_xgb, 'p_fusion': p_fusion,
-        'score': score, 'level': level, 'amount': amount, 'advice': advice,
-        'shap_fig': shap_fig,
+        'p_lr': p_lr, 'p_xgb': p_xgb, 'divergence': divergence, 'is_divergent': is_divergent,
+        'p_fusion': p_fusion, 'score': score, 'level': level,
+        'action': action, 'grade': grade,
+        'shap_fig': shap_fig, 'shap_summary': shap_summary,
+        'feature_values': X.iloc[0].to_dict(),
     }
 
+def patent_status(row):
+    try:
+        valid = row.get('有效专利数')
+        if pd.notna(valid) and float(valid) > 0:
+            return '确认有', f"{int(float(valid))}件有效专利"
+    except (ValueError, TypeError):
+        pass
+    try:
+        total = row.get('专利申请总量')
+        src = str(row.get('数据来源', ''))
+        if pd.notna(total) and float(total) == 0 and src and src not in ('', 'nan'):
+            return '确认无', '经公开渠道核查未发现专利申请记录'
+    except (ValueError, TypeError):
+        pass
+    return '暂未匹配', '建议在国家知识产权局专利检索系统复核（pss-system.cponline.cnipa.gov.cn）'
+
 def zhuhai_info(row):
-    """珠海企业：三维画像"""
     typ = str(row.get('企业类型', ''))
     sme = '是' if pd.notna(row.get('专精特新中小企业')) and row.get('专精特新中小企业') else '否'
     giant = '是' if pd.notna(row.get('专精特新小巨人')) and row.get('专精特新小巨人') else '否'
@@ -376,75 +358,68 @@ def zhuhai_info(row):
         pat, pat_lvl = 0, '无数据'
     ratio, covered, missing = coverage_analysis(row)
 
-    # 资质层级（高企→创新型→专精特新→小巨人）
     rank = 0
-    if '高新技术企业' in typ:
-        rank = max(rank, 1)
-    if '创新型' in typ:
-        rank = max(rank, 2)
-    if sme == '是':
-        rank = max(rank, 3)
-    if giant == '是':
-        rank = max(rank, 4)
+    if '高新技术企业' in typ: rank = max(rank, 1)
+    if '创新型' in typ: rank = max(rank, 2)
+    if sme == '是': rank = max(rank, 3)
+    if giant == '是': rank = max(rank, 4)
     rank_names = {0: '未明确科创资质', 1: '高新技术企业', 2: '创新型中小企业', 3: '专精特新中小企业', 4: '专精特新小巨人'}
     rank_name = rank_names[rank]
 
-    # 专利分级
     try:
         pat_n = float(pat)
-        if pat_n >= 100:
-            pat_grade = '高'
-        elif pat_n >= 20:
-            pat_grade = '中'
-        elif pat_n > 0:
-            pat_grade = '低'
-        else:
-            pat_grade = '无'
+        if pat_n >= 100: pat_grade = '高'
+        elif pat_n >= 20: pat_grade = '中'
+        elif pat_n > 0: pat_grade = '低'
+        else: pat_grade = '无'
     except (ValueError, TypeError):
         pat_grade = '无'
 
-    # 代理创新能力评分（覆盖率为主，专利/资质加成）
-    base_score = ratio
-    if rank >= 3:
-        base_score += 5
-    if pat_grade == '高':
-        base_score += 5
-    elif pat_grade == '中':
-        base_score += 3
-    proxy_score = round(min(base_score, 90), 1)
+    if ratio < 50:
+        coverage_tier = '证据不足'
+        proxy_display = '暂不评分'
+        proxy_conclusion = f'当前指标覆盖率仅{ratio}%（覆盖{len(covered)}/12项），证据不足，暂不给出创新能力评分，建议补充核心材料后再评估。'
+    elif ratio < 75:
+        coverage_tier = '初步评估'
+        base_score = ratio + (5 if rank >= 3 else 0) + (5 if pat_grade == '高' else (3 if pat_grade == '中' else 0))
+        proxy_display = f"{round(min(base_score, 90), 1)}（初步）"
+        proxy_conclusion = f'覆盖率{ratio}%，可给出初步创新画像，完整评分需补充材料后确认。'
+    else:
+        coverage_tier = '可评分'
+        base_score = ratio + (5 if rank >= 3 else 0) + (5 if pat_grade == '高' else (3 if pat_grade == '中' else 0))
+        proxy_display = f"{round(min(base_score, 90), 1)}"
+        proxy_conclusion = f'覆盖率{ratio}%，材料较完整，可给出创新能力参考评分。'
 
-    # 新字段：有效专利 / 纳税信用 / 成立年限
+    pat_status, pat_desc = patent_status(row)
+
     try:
         valid_pat = float(row.get('有效专利数'))
-        if pd.isna(valid_pat):
-            valid_pat = None
+        if pd.isna(valid_pat): valid_pat = None
     except (ValueError, TypeError):
         valid_pat = None
     tax = str(row.get('纳税信用等级', '')).strip()
-    if tax in ('', 'nan') or '未公开' in tax:
-        tax = '未公开'
+    if tax in ('', 'nan') or '未公开' in tax: tax = '未公开'
     try:
         years = row.get('成立年限')
-        if pd.isna(years):
-            years = None
+        if pd.isna(years): years = None
     except Exception:
         years = None
 
     return {
-        'rank_name': rank_name, 'rank': rank,
-        'sme': sme, 'giant': giant,
+        'rank_name': rank_name, 'rank': rank, 'sme': sme, 'giant': giant,
         'pat': pat_n if isinstance(pat, (int, float)) else 0,
         'pat_lvl': pat_lvl, 'pat_grade': pat_grade,
+        'pat_status': pat_status, 'pat_desc': pat_desc,
         'coverage': ratio, 'covered': covered, 'missing': missing,
-        'proxy_score': proxy_score,
+        'coverage_tier': coverage_tier, 'proxy_display': proxy_display,
+        'proxy_conclusion': proxy_conclusion,
         'valid_pat': valid_pat, 'tax': tax, 'years': years,
     }
 
 # ---------- 界面 ----------
 st.title('积信通 · 科技企业可解释授信辅助引擎')
-st.caption('基于创新积分2.0指标体系的科创授信决策辅助工具（工行杯参赛原型）')
+st.caption('基于创新积分2.0指标体系的科创授信决策辅助工具（工行杯参赛原型 · 模型辅助分，非工行内部评分）')
 
-# ---------- 可查询范围 ----------
 try:
     _overlap = len(set(train['企业名称'].astype(str).str.strip()) & set(zhuhai['企业名称'].astype(str).str.strip()))
 except Exception:
@@ -461,40 +436,35 @@ _c3.metric('专利覆盖', (f"{_total_pat:,}件" if _total_pat else '—'), delt
 _c4.metric('去重合计可查', f"{int(meta['n_samples']) + len(zhuhai) - _overlap:,}家", delta='含两类重叠企业')
 st.markdown(
     '**查询说明**：输入企业名称后自动匹配——'
-    '① **A股/新三板企业**（3559家）输出完整模型报告（信用评分、风险等级、授信额度、SHAP特征解释、工行产品匹配）；'
-    '② **珠海本地企业**（1594家）财务数据不公开，输出"资质＋专利＋覆盖率"三维画像与材料补充建议。'
+    '① **A股/新三板企业**输出完整模型报告（模型辅助评分、风险等级、授信动作建议、SHAP风险解释、工行产品预匹配）；'
+    '② **珠海本地企业**财务数据不公开，输出"资质＋专利＋覆盖率"三维画像与材料补充建议。'
 )
-st.markdown(
-    '**覆盖名单**：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强、科技型中小企业等8类。'
-    '**示例查询**：立讯精密、深科技、珠海格力大金机电、格力钛新能源。'
-)
+st.markdown('**覆盖名单**：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强、科技型中小企业等8类。**示例查询**：立讯精密、深科技、珠海格力大金机电、格力钛新能源。')
 st.divider()
 
 with st.sidebar:
     st.header('⚙️ 查询设置')
     mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
     st.divider()
-    st.markdown(f'**模型状态**\n\n- 训练样本：{meta["n_samples"]}家\n- 融合AUC：{meta["auc_fusion"]:.4f}\n- 准确率：{meta["accuracy"]*100:.1f}%')
+    st.markdown('**模型信息**')
+    for k, v in MODEL_META.items():
+        st.markdown(f'- **{k}**：{v}')
+    st.divider()
+    st.caption('注：本工具输出为模型参考值，不构成最终授信决策。')
 
 if mode == '企业名称查询':
     if 'sel_company' not in st.session_state:
         st.session_state.sel_company = ''
-    # 预设演示案例（答辩一键展示）
     st.markdown('**🎯 演示案例（答辩直接点击）**')
     _dc1, _dc2, _dc3 = st.columns(3)
-    if _dc1.button('🌟 案例A：立讯精密（A股龙头·高分报告）', width='stretch'):
-        st.session_state.sel_company = '立讯精密'
-        st.rerun()
-    if _dc2.button('📊 案例B：深科技（A股·风险维度展示）', width='stretch'):
-        st.session_state.sel_company = '深科技'
-        st.rerun()
-    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地三维画像）', width='stretch'):
-        st.session_state.sel_company = '格力大金'
-        st.rerun()
-    q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company,
-                      placeholder='如：立讯精密 或 格力')
+    if _dc1.button('🌟 案例A：立讯精密（A股龙头）', width='stretch'):
+        st.session_state.sel_company = '立讯精密'; st.rerun()
+    if _dc2.button('📊 案例B：深科技（A股）', width='stretch'):
+        st.session_state.sel_company = '深科技'; st.rerun()
+    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地）', width='stretch'):
+        st.session_state.sel_company = '格力大金'; st.rerun()
+    q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company, placeholder='如：立讯精密 或 格力')
     q = q.strip()
-    # 自动联想：输入时实时弹出匹配企业建议，点击即查询
     if q:
         _all_names = pd.concat([train['企业名称'], zhuhai['企业名称']]).astype(str).str.strip()
         _sug = _all_names[_all_names.str.contains(q, na=False)].drop_duplicates().head(12).tolist()
@@ -503,116 +473,137 @@ if mode == '企业名称查询':
             _cols = st.columns(3)
             for i, _s in enumerate(_sug):
                 if _cols[i % 3].button(_s, key=f'sug_{i}', width='stretch'):
-                    st.session_state.sel_company = _s
-                    st.rerun()
+                    st.session_state.sel_company = _s; st.rerun()
         else:
-            st.warning(f'未找到与「{q}」匹配的企业。可试：立讯精密、深科技、格力。')
+            st.warning(f'未找到与「{q}」匹配的企业。')
     if q:
-        # 1. 训练集匹配
         train_hits = train[train['企业名称'].str.contains(q, na=False)]
-        # 2. 珠海总库匹配
         zhuhai_hits = zhuhai[zhuhai['企业名称'].str.contains(q, na=False)]
-
         if len(train_hits) == 0 and len(zhuhai_hits) == 0:
-            st.warning(f'未找到与「{q}」匹配的企业。可尝试：立讯精密、深科技、格力，或输入珠海企业全称。')
+            st.warning(f'未找到与「{q}」匹配的企业。')
         else:
-            # 展示训练集企业（完整模型报告）
             for _, row in train_hits.head(3).iterrows():
                 name = row['企业名称']
-                st.subheader(f'📋 {name}（{row.get("数据来源", "")}）')
                 rep = build_report(row)
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric('综合信用评分', rep['score'], delta='0-100分')
-                c2.metric('风险等级', rep['level'])
-                c3.metric('建议额度', rep['amount'])
-                c4.metric('高风险概率', f"{rep['p_fusion']*100:.1f}%")
-                # 风险仪表盘（Plotly gauge）
-                _gcolor = '#2E9E5B' if rep['score'] >= 80 else ('#8BC8EA' if rep['score'] >= 60 else ('#FAAD14' if rep['score'] >= 40 else '#EA6668'))
-                _gauge = go.Figure(go.Indicator(
-                    mode='gauge+number',
-                    value=rep['score'],
-                    number={'font': {'size': 36, 'color': _gcolor}},
-                    gauge={
-                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#888'},
-                        'bar': {'color': _gcolor, 'thickness': 0.3},
-                        'bgcolor': 'white',
-                        'steps': [
-                            {'range': [0, 40], 'color': '#FBE3E3'},
-                            {'range': [40, 60], 'color': '#FEF3CD'},
-                            {'range': [60, 80], 'color': '#DCEFFB'},
-                            {'range': [80, 100], 'color': '#D9F2E0'},
-                        ],
-                        'threshold': {'line': {'color': '#333', 'width': 2}, 'thickness': 0.75, 'value': rep['score']},
-                    },
-                    title={'text': '信用评分仪表盘', 'font': {'size': 13}},
-                ))
-                _gauge.update_layout(height=220, margin=dict(l=20, r=20, t=40, b=10))
-                st.plotly_chart(_gauge, width='stretch')
-                st.markdown(f'**授信建议**：{rep["advice"]}')
-                st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
-                if rep['shap_fig']:
-                    st.pyplot(rep['shap_fig'])
-                prods = product_match(rep['score'])
-                st.markdown('**工行产品匹配**：' + '；'.join(f'《{p[0]}》{p[1]}' for p in prods))
+                st.subheader(f'📋 {name}（{row.get("数据来源", "")}）')
+                tab1, tab2, tab3, tab4 = st.tabs(['审批摘要', '特征证据', 'SHAP风险解释', '数据与合规'])
+                with tab1:
+                    if rep['is_divergent']:
+                        st.markdown(
+                            f'<div class="warn-box"><p>⚠️ <strong>模型分歧预警</strong>：Logistic判断高风险概率 {rep["p_lr"]*100:.1f}%，'
+                            f'XGBoost判断高风险概率 {rep["p_xgb"]*100:.1f}%，两模型差异 {rep["divergence"]*100:.1f}个百分点（超过50%阈值）。'
+                            f'本次不自动生成融合评分，建议人工复核关键财务指标（营收、毛利率、研发费用、资产负债率）。</p></div>',
+                            unsafe_allow_html=True)
+                        st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
+                    else:
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric('模型辅助评分', rep['score'], delta='0-100分（非工行内部评分）')
+                        c2.metric('风险等级', rep['level'])
+                        c3.metric('高风险概率', f"{rep['p_fusion']*100:.1f}%")
+                        c4.metric('授信动作', rep['grade'] + '级')
+                        _gcolor = '#2E9E5B' if rep['score'] >= 80 else ('#8BC8EA' if rep['score'] >= 60 else ('#FAAD14' if rep['score'] >= 40 else '#EA6668'))
+                        _gauge = go.Figure(go.Indicator(
+                            mode='gauge+number', value=rep['score'],
+                            number={'font': {'size': 36, 'color': _gcolor}},
+                            gauge={'axis': {'range': [0, 100]}, 'bar': {'color': _gcolor, 'thickness': 0.3},
+                                   'steps': [{'range': [0, 40], 'color': '#FBE3E3'}, {'range': [40, 60], 'color': '#FEF3CD'},
+                                             {'range': [60, 80], 'color': '#DCEFFB'}, {'range': [80, 100], 'color': '#D9F2E0'}]},
+                            title={'text': '模型辅助评分仪表盘', 'font': {'size': 13}}))
+                        _gauge.update_layout(height=220, margin=dict(l=20, r=20, t=40, b=10))
+                        st.plotly_chart(_gauge, width='stretch')
+                        st.markdown(f'**授信动作建议**：{rep["action"]}')
+                        st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
+                        st.markdown('**工行产品预匹配**')
+                        for pm in product_prematch(rep['score']):
+                            st.markdown(f'- **《{pm["产品"]}》** 匹配度：{pm["匹配度"]}')
+                            if pm['已满足']:
+                                st.markdown(f'  - 已满足：{"、".join(pm["已满足"])}')
+                            st.markdown(f'  - 待核验：{"、".join(pm["待核验"])}')
+                with tab2:
+                    st.markdown('**模型输入特征明细（11项）**')
+                    fv = rep['feature_values']
+                    rows = []
+                    for f in FEATURES:
+                        v = fv.get(f, '')
+                        unit = _FEATURE_UNITS.get(f, '')
+                        rows.append({'特征': f, '取值': f"{v:.2f}" if isinstance(v, (int, float)) else str(v), '单位': unit})
+                    st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+                    st.caption('以上特征为模型实际输入值，缺失值以训练集中位数填充。')
+                with tab3:
+                    if rep['shap_summary']:
+                        s = rep['shap_summary']
+                        st.markdown('**机器判断摘要**')
+                        if s['有利因素']:
+                            st.markdown(f'- ✅ **有利因素（降低风险判断）**：{"、".join(s["有利因素"])}')
+                        if s['关注因素']:
+                            st.markdown(f'- ⚠️ **关注因素（提高风险判断）**：{"、".join(s["关注因素"])}')
+                        st.markdown(f'*基线值（全体样本平均风险判断）：{s["base"]:.2f}（log-odds空间）*')
+                        st.divider()
+                    if rep['shap_fig']:
+                        st.pyplot(rep['shap_fig'])
+                        st.caption('说明：SHAP值为正表示该特征推高了模型的风险判断，为负表示降低了风险判断；单位为log-odds，非评分点数。')
+                    else:
+                        st.info('SHAP解释暂不可用。')
+                with tab4:
+                    st.markdown('**数据来源**：企业财务指标来自东方财富/新浪财经/全国股转系统公开年报；模型训练标签为近2年亏损/ST/退市风险警示。')
+                    st.markdown('**合规声明**：本工具所有数据均来自公开渠道，不涉及工商银行内部客户数据；输出为模型参考值，不构成最终授信决策，实际审批以银行尽调为准。')
+                    st.markdown('**模型适用性**：本模型适用于A股及新三板科技企业的风险初筛，不适用于金融、房地产等非科技行业，亦不替代银行KYC、反洗钱、终审决策等强监管环节。')
                 st.divider()
 
-            # 展示珠海企业（三维画像）
             for _, row in zhuhai_hits.head(3).iterrows():
                 name = row['企业名称']
                 info = zhuhai_info(row)
                 st.subheader(f'🏙️ {name}（珠海本地企业）')
-                st.markdown(f'**科创画像**：{info["rank_name"]}｜专精特新中小企业 {info["sme"]}｜小巨人 {info["giant"]}')
-                _extra = []
-                if info['valid_pat'] is not None:
-                    _extra.append(f'有效专利 {int(info["valid_pat"])} 件')
-                if info['tax'] and info['tax'] != '未公开':
-                    _extra.append(f'纳税信用 {info["tax"]}')
-                if info['years'] is not None:
-                    _extra.append(f'成立 {int(info["years"])} 年')
-                if _extra:
-                    st.markdown('**经营画像**：' + '｜'.join(_extra))
-                c1, c2, c3 = st.columns(3)
-                c1.metric('代理创新能力评分', info['proxy_score'])
-                c2.metric('指标覆盖率', f"{info['coverage']}%", delta=f'覆盖{len(info["covered"])}/12项')
-                c3.metric('专利总量', int(info['pat']), delta=f'分级：{info["pat_grade"]}')
-                st.markdown('**已覆盖指标**：' + '、'.join(info['covered']))
-                st.markdown('**建议补充材料**：' + '、'.join(info['missing']) if info['missing'] else '材料齐全')
-                prods = product_match(info['proxy_score'], {'专利分级': info['pat_grade'], '专精特新': info['sme'] == '是'})
-                st.markdown('**工行产品匹配**：' + '；'.join(f'《{p[0]}》{p[1]}' for p in prods))
-                st.caption('注：珠海非上市企业财务数据不公开，评分基于资质+专利+覆盖率三维画像，完整授信需补充财务材料。')
+                zt1, zt2, zt3 = st.tabs(['画像摘要', '材料清单', '产品预匹配'])
+                with zt1:
+                    st.markdown(f'**科创资质**：{info["rank_name"]}｜专精特新中小企业 {info["sme"]}｜小巨人 {info["giant"]}')
+                    _extra = []
+                    if info['valid_pat'] is not None: _extra.append(f'有效专利 {int(info["valid_pat"])} 件')
+                    if info['tax'] != '未公开': _extra.append(f'纳税信用 {info["tax"]}')
+                    if info['years'] is not None: _extra.append(f'成立 {int(info["years"])} 年')
+                    if _extra:
+                        st.markdown('**经营画像**：' + '｜'.join(_extra))
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric('创新能力评估', info['proxy_display'], delta=info['coverage_tier'])
+                    c2.metric('指标覆盖率', f"{info['coverage']}%", delta=f'覆盖{len(info["covered"])}/12项')
+                    c3.metric('专利状态', info['pat_status'], delta=info['pat_desc'][:20])
+                    st.markdown(f'**评估结论**：{info["proxy_conclusion"]}')
+                with zt2:
+                    st.markdown('**已覆盖指标**：' + ('、'.join(info['covered']) if info['covered'] else '暂无'))
+                    st.markdown('**建议补充材料**：' + ('、'.join(info['missing']) if info['missing'] else '材料齐全'))
+                    st.caption('补充材料后可提升指标覆盖率，进而获得更完整的创新能力评估。')
+                with zt3:
+                    for pm in product_prematch(info.get('proxy_score', 50) if info['coverage_tier'] == '可评分' else 40, info):
+                        st.markdown(f'- **《{pm["产品"]}》** 匹配度：{pm["匹配度"]}')
+                        if pm['已满足']:
+                            st.markdown(f'  - 已满足：{"、".join(pm["已满足"])}')
+                        st.markdown(f'  - 待核验：{"、".join(pm["待核验"])}')
+                st.caption('注：珠海非上市企业财务数据不公开，本页基于资质+专利+覆盖率三维画像，完整授信需补充财务材料。')
                 st.divider()
 
             if len(train_hits) == 0 and len(zhuhai_hits) > 0:
-                st.info('该企业为珠海本地企业：财务数据不公开，已采用"资质+专利+覆盖率"三维画像评估，符合银行真实审批场景。')
+                st.info('该企业为珠海本地企业：财务数据不公开，已采用"资质+专利+覆盖率"三维画像评估。')
 
 else:
-    # 珠海企业浏览模式
     st.subheader('🏙️ 珠海科创企业总库浏览')
     col1, col2 = st.columns([1, 2])
     with col1:
-        # 按资质筛选
-        types = ['全部'] + sorted(zhuhai['企业类型'].astype(str).unique().tolist())
+        types = ['全部'] + sorted(set(str(v) if pd.notna(v) else '未分类' for v in zhuhai['企业类型']))
         sel_type = st.selectbox('按资质筛选', types)
         show_all = st.checkbox('仅显示有专利数据的企业', value=False)
     with col2:
         st.markdown(f'**总库规模**：{len(zhuhai)}家珠海科创企业')
         st.markdown('包含：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强企业等。')
-
     view = zhuhai.copy()
     if sel_type != '全部':
         view = view[view['企业类型'].astype(str) == sel_type]
     if show_all:
         view = view[view['专利申请总量'].notna() & (view['专利申请总量'] > 0)]
-
-    # 关键字过滤（替代大下拉，避免上千选项导致卡顿）
     kw = st.text_input('输入关键字过滤企业（可空）', key='zh_kw')
     if kw:
         view = view[view['企业名称'].astype(str).str.contains(kw.strip(), na=False)]
-
     st.dataframe(view, width='stretch', height=400)
     st.caption(f'当前显示 {len(view)} 家企业')
-
-    # 企业选择：显示前50家可点击按钮（替代大selectbox，性能稳定）
     if 'zh_sel' not in st.session_state:
         st.session_state.zh_sel = ''
     show_names = view['企业名称'].astype(str).tolist()[:50]
@@ -621,30 +612,26 @@ else:
         _c = st.columns(3)
         for i, n in enumerate(show_names):
             if _c[i % 3].button(n, key=f'zh_{i}', width='stretch'):
-                st.session_state.zh_sel = n
-                st.rerun()
+                st.session_state.zh_sel = n; st.rerun()
     sel_name = st.session_state.zh_sel
     if sel_name and sel_name in view['企业名称'].astype(str).values:
         row = view[view['企业名称'] == sel_name].iloc[0]
         info = zhuhai_info(row)
         st.subheader(f'📄 {sel_name} 授信辅助报告')
         c1, c2, c3 = st.columns(3)
-        c1.metric('代理创新能力评分', info['proxy_score'])
+        c1.metric('创新能力评估', info['proxy_display'], delta=info['coverage_tier'])
         c2.metric('指标覆盖率', f"{info['coverage']}%")
-        c3.metric('专利总量', int(info['pat']))
+        c3.metric('专利状态', info['pat_status'])
         st.markdown(f'**资质层级**：{info["rank_name"]}')
         _extra2 = []
-        if info['valid_pat'] is not None:
-            _extra2.append(f'有效专利 {int(info["valid_pat"])} 件')
-        if info['tax'] and info['tax'] != '未公开':
-            _extra2.append(f'纳税信用 {info["tax"]}')
-        if info['years'] is not None:
-            _extra2.append(f'成立 {int(info["years"])} 年')
+        if info['valid_pat'] is not None: _extra2.append(f'有效专利 {int(info["valid_pat"])} 件')
+        if info['tax'] != '未公开': _extra2.append(f'纳税信用 {info["tax"]}')
+        if info['years'] is not None: _extra2.append(f'成立 {int(info["years"])} 年')
         if _extra2:
             st.markdown('**经营画像**：' + '｜'.join(_extra2))
-        st.markdown('**已覆盖指标**：' + '、'.join(info['covered']))
+        st.markdown(f'**评估结论**：{info["proxy_conclusion"]}')
+        st.markdown('**已覆盖指标**：' + ('、'.join(info['covered']) if info['covered'] else '暂无'))
         st.markdown('**建议补充材料**：' + ('、'.join(info['missing']) if info['missing'] else '材料齐全'))
-        st.markdown('**授信结论**：' + ('建议纳入创新积分贷初步评估，补充材料后完整评估。' if info['proxy_score'] >= 50 else '建议补充财务及研发材料后再评估，当前材料完整度不足。'))
 
 st.divider()
 with st.expander('📋 数据来源与合规说明（点击展开）', expanded=False):
