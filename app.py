@@ -479,16 +479,15 @@ with st.sidebar:
     st.header('⚙️ 查询设置')
     mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
     st.divider()
-    with st.expander('模型信息', expanded=True):
-        st.caption(
-            f"版本 {MODEL_META['版本']} ｜ {MODEL_META['训练时间']}　"
-            f"样本 {MODEL_META['训练样本']}\n\n"
-            f"特征 {MODEL_META['特征数量']}　"
-            f"OOT {MODEL_META['OOT测试期']}\n\n"
-            f"AUC {MODEL_META['融合AUC']} ｜ 准确率 {MODEL_META['准确率']}　"
-            f"KS {MODEL_META['KS']}\n\n"
-            f"标签：{MODEL_META['标签定义']}"
-        )
+    st.divider()
+    st.markdown('**模型信息**')
+    st.caption(f"版本：{MODEL_META['版本']}　训练时间：{MODEL_META['训练时间']}")
+    st.caption(f"训练样本：{MODEL_META['训练样本']}")
+    st.caption(f"特征数量：{MODEL_META['特征数量']}")
+    st.caption(f"标签定义：{MODEL_META['标签定义']}")
+    st.caption(f"OOT测试期：2026年度")
+    st.caption(f"融合AUC：{MODEL_META['融合AUC']}　准确率：{MODEL_META['准确率']}")
+    st.caption(f"KS：{MODEL_META['KS']}　PR-AUC：{MODEL_META['PR-AUC']}")
     st.divider()
     st.caption('注：本工具输出为模型参考值，不构成最终授信决策。')
 
