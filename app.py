@@ -155,20 +155,16 @@ div[role="option"][aria-selected="true"] {
   color: var(--icbc-red) !important;
 }
 div[role="radiogroup"] label, div[role="checkbox"] label { color: var(--text-main) !important; font-size: 14px; }
-/* radio圆点：未选中灰色小圆，选中红色大圆，通过大小+颜色区分 */
+/* radio圆点：未选中灰色小圆，选中红色大圆 */
 div[role="radiogroup"] label svg {
   width: 14px !important; height: 14px !important;
-  color: #C9CDD4 !important;
+  color: #C9CDD4 !important; fill: #C9CDD4 !important;
 }
 div[role="radiogroup"] label:has(input:checked) svg {
   width: 18px !important; height: 18px !important;
-  color: var(--icbc-red) !important;
+  color: var(--icbc-red) !important; fill: var(--icbc-red) !important;
 }
 div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !important; }
-header[data-testid="stHeader"] { background: #FFFFFF !important; }
-section.main, div.main { background: #FFFFFF !important; }
-a { color: var(--icbc-red) !important; }
-div[role="radiogroup"] label svg, div[role="checkbox"] label svg { color: var(--icbc-red) !important; }
 .stSelectbox > div > div { border: 1px solid var(--border) !important; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #F2F3F5; }
@@ -218,15 +214,17 @@ div[data-testid="stTable"] td {
   background-color: #FFFFFF !important;
   color: var(--text-main) !important;
 }
-/* checkbox：未选灰色空心框，选中工行红 */
-div[role="checkbox"] label div:first-child,
-div[role="checkbox"] label svg {
+/* checkbox：未选灰色空心框，选中工行红 — 强力覆盖 */
+div[data-testid="stCheckbox"] *,
+div[data-testid="stCheckbox"] *::before,
+div[data-testid="stCheckbox"] *::after {
   color: #C9CDD4 !important;
   border-color: #C9CDD4 !important;
   fill: #C9CDD4 !important;
+  background-color: transparent !important;
 }
-div[role="checkbox"] label:has(input:checked) div:first-child,
-div[role="checkbox"] label:has(input:checked) svg {
+div[data-testid="stCheckbox"] [aria-checked="true"] *,
+div[data-testid="stCheckbox"] input:checked ~ * {
   color: var(--icbc-red) !important;
   border-color: var(--icbc-red) !important;
   fill: var(--icbc-red) !important;
@@ -664,9 +662,15 @@ if mode == '企业名称查询':
                     if _extra:
                         st.markdown('**经营画像**：' + '｜'.join(_extra))
                     c1, c2, c3 = st.columns(3)
-                    c1.metric('创新能力评估', info['proxy_display'], delta=info['coverage_tier'])
-                    c2.metric('指标覆盖率', f"{info['coverage']}%", delta=f'覆盖{len(info["covered"])}/12项')
-                    c3.metric('专利状态', info['pat_status'], delta=info['pat_desc'][:20])
+                    def _info_card(col, title, value, tag):
+                        col.markdown(f'''<div style="background:#FFFFFF;border:1px solid #E5E6EB;border-radius:10px;padding:16px;min-height:140px;">
+<div style="font-size:13px;color:var(--text-sub);">{title}</div>
+<div style="font-size:28px;font-weight:600;color:var(--text-main);margin-top:8px;">{value}</div>
+<div style="display:inline-block;margin-top:10px;padding:5px 10px;border-radius:12px;font-size:12px;color:#2E9E5B;background:rgba(46,158,91,0.12);line-height:1.5;">↑ {tag}</div>
+</div>''', unsafe_allow_html=True)
+                    _info_card(c1, '创新能力评估', info['proxy_display'], info['coverage_tier'])
+                    _info_card(c2, '指标覆盖率', f"{info['coverage']}%", f'覆盖{len(info["covered"])}/12项')
+                    _info_card(c3, '专利状态', info['pat_status'], info['pat_desc'])
                     st.markdown(f'**评估结论**：{info["proxy_conclusion"]}')
                 with zt2:
                     st.markdown('**已覆盖指标**：' + ('、'.join(info['covered']) if info['covered'] else '暂无'))
