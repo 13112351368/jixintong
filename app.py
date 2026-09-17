@@ -169,7 +169,7 @@ div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !import
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #F2F3F5; }
 ::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
-hr { border-color: #C9CDD4 !important; border-width: 1px !important; margin: 12px 0 !important; }
+hr { border-color: #C9CDD4 !important; border-width: 1px !important; margin: 8px 0 !important; }
 /* 侧边栏紧凑 */
 section[data-testid="stSidebar"] .stAlert { margin-bottom: 4px !important; padding: 10px 14px !important; }
 header[data-testid="stHeader"] { background: #D9DCE0 !important; }
@@ -536,7 +536,7 @@ with st.sidebar:
         st.info('当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
     else:
         st.info('当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
-    st.markdown('---')
+    st.markdown('<hr style="margin:24px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
     with st.expander('模型信息', expanded=True):
         st.caption("版本 v1.2 ｜ 2026-09")
         st.caption("样本 3,559家（A股294+新三板3265）")
