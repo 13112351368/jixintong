@@ -169,7 +169,7 @@ div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !import
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #F2F3F5; }
 ::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
-hr { border-color: #C9CDD4 !important; border-width: 1px !important; margin: 12px 0 !important; }
+hr { border-color: #C9CDD4 !important; border-width: 1px !important; margin: 24px 0 !important; }
 /* 侧边栏紧凑 */
 section[data-testid="stSidebar"] .stAlert { margin-bottom: 4px !important; padding: 10px 14px !important; }
 header[data-testid="stHeader"] { background: #D9DCE0 !important; }
