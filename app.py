@@ -529,11 +529,11 @@ st.divider()
 
 with st.sidebar:
     st.header('⚙️ 查询设置')
-    mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
-    if mode == '企业名称查询':
-        st.info('📋 当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
+    mode = st.radio('查询模式', ['🔍 企业名称查询', '🗂️ 珠海企业浏览'], index=0)
+    if mode == '🔍 企业名称查询':
+        st.info('当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
     else:
-        st.info('🏙️ 当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
+        st.info('当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
     st.divider()
     st.divider()
     with st.expander('模型信息', expanded=True):
@@ -552,7 +552,7 @@ with st.sidebar:
     st.divider()
     st.caption('注：本工具输出为模型参考值，不构成最终授信决策。')
 
-if mode == '企业名称查询':
+if mode == '🔍 企业名称查询':
     if 'sel_company' not in st.session_state:
         st.session_state.sel_company = ''
     st.markdown('<h3 style="color:var(--text-main);font-size:16px;margin:8px 0;">🎯 演示案例（答辩直接点击）</h3>', unsafe_allow_html=True)
