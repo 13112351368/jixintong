@@ -536,7 +536,7 @@ with st.sidebar:
         st.info('当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
     else:
         st.info('当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
-    st.markdown('<hr style="margin:24px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
+    st.markdown('<hr style="margin:8px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
     with st.expander('模型信息', expanded=True):
         st.caption("版本 v1.2 ｜ 2026-09")
         st.caption("样本 3,559家（A股294+新三板3265）")
