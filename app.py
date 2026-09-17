@@ -546,7 +546,7 @@ with st.sidebar:
         st.caption("AUC 0.8614 ｜ 准确率 81.7%")
         st.caption("KS 0.58（待最终验证集确认）")
         st.caption("PR-AUC 0.74（待最终验证集确认）")
-        st.divider()
+        st.markdown('<hr style="margin:8px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
         st.caption("【消融实验】纯财务基线AUC=0.8336")
         st.caption("加入研发/创新指标后AUC=0.8539（+0.020）")
         st.caption("ΔPR-AUC=+0.061，ΔKS=+0.036")
