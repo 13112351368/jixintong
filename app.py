@@ -169,7 +169,7 @@ div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !import
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #F2F3F5; }
 ::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
-hr { border-color: var(--border); }
+hr { border-color: #C9CDD4 !important; border-width: 1px !important; }
 header[data-testid="stHeader"] { background: #D9DCE0 !important; }
 div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
   background: transparent !important; border: none !important; padding: 0 !important;
@@ -525,8 +525,7 @@ st.markdown(
     '② **珠海本地企业**财务数据不公开，输出"资质＋专利＋覆盖率"三维画像与材料补充建议。'
 )
 st.markdown('**覆盖名单**：高新技术企业、创新型中小企业、专精特新中小企业、专精特新小巨人、创新百强、科技型中小企业等8类。**示例查询**：立讯精密、深科技、珠海格力大金机电、格力钛新能源。')
-st.markdown('---')
-st.markdown('')
+st.divider()
 
 with st.sidebar:
     st.header('⚙️ 查询设置')
