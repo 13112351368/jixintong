@@ -535,7 +535,6 @@ with st.sidebar:
     else:
         st.info('当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
     st.divider()
-    st.divider()
     with st.expander('模型信息', expanded=True):
         st.caption("版本 v1.2 ｜ 2026-09")
         st.caption("样本 3,559家（A股294+新三板3265）")
@@ -703,6 +702,7 @@ if mode == '🔍 企业名称查询':
                 st.info('该企业为珠海本地企业：财务数据不公开，已采用"资质+专利+覆盖率"三维画像评估。')
 
 else:
+    st.info('🏙️ **珠海本地企业查询说明**：财务数据不公开，系统采用"资质标签+专利数据+指标覆盖率"三维画像方案，覆盖率不足50%时不输出评分，仅提示补充材料。', icon='💡')
     st.subheader('🏙️ 珠海科创企业总库浏览')
     col1, col2 = st.columns([1, 2])
     with col1:
