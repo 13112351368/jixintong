@@ -530,6 +530,10 @@ st.divider()
 with st.sidebar:
     st.header('⚙️ 查询设置')
     mode = st.radio('查询模式', ['企业名称查询', '珠海企业浏览'], index=0)
+    if mode == '企业名称查询':
+        st.info('📋 当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
+    else:
+        st.info('🏙️ 当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
     st.divider()
     st.divider()
     with st.expander('模型信息', expanded=True):
