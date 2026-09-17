@@ -553,12 +553,12 @@ if mode == '企业名称查询':
         st.session_state.sel_company = ''
     st.markdown('<h3 style="color:var(--text-main);font-size:16px;margin:8px 0;">🎯 演示案例（答辩直接点击）</h3>', unsafe_allow_html=True)
     _dc1, _dc2, _dc3 = st.columns(3)
-    if _dc1.button('🌟 案例A：立讯精密（A股龙头）', use_container_width=True):
-        st.session_state.sel_company = '立讯精密'; st.rerun()
-    if _dc2.button('📊 案例B：深科技（A股）', use_container_width=True):
-        st.session_state.sel_company = '深科技'; st.rerun()
-    if _dc3.button('🏙️ 案例C：格力大金机电（珠海本地）', use_container_width=True):
+    if _dc1.button('🏙️ 案例A：格力大金机电（珠海本地）', use_container_width=True):
         st.session_state.sel_company = '珠海格力大金机电设备有限公司'; st.rerun()
+    if _dc2.button('🌟 案例B：立讯精密（A股龙头）', use_container_width=True):
+        st.session_state.sel_company = '立讯精密'; st.rerun()
+    if _dc3.button('📊 案例C：深科技（A股）', use_container_width=True):
+        st.session_state.sel_company = '深科技'; st.rerun()
     q = st.text_input('请输入企业名称（支持模糊匹配）', value=st.session_state.sel_company, placeholder='如：立讯精密 或 格力')
     q = q.strip()
     if q:
@@ -599,7 +599,7 @@ if mode == '企业名称查询':
                     else:
                         c1, c2, c3, c4 = st.columns(4)
                         c1.metric('模型辅助评分', rep['score'], delta='0-100分（非工行内部评分）')
-                        c2.metric('风险等级', rep['level'])
+                        c2.metric('相对风险等级', rep['level'], delta='样本内排序分档，不构成违约概率')
                         c3.metric('高风险概率', f"{rep['p_fusion']*100:.1f}%")
                         c4.metric('授信动作', rep['grade'] + '级')
                         _gcolor = '#2E9E5B' if rep['score'] >= 80 else ('#8BC8EA' if rep['score'] >= 60 else ('#FAAD14' if rep['score'] >= 40 else '#EA6668'))
@@ -618,9 +618,9 @@ if mode == '企业名称查询':
                         st.plotly_chart(_gauge, use_container_width=True)
                         st.markdown(f'**授信动作建议**：{rep["action"]}')
                         st.markdown(f'**模型构成**：Logistic {rep["p_lr"]*100:.1f}%风险 × 0.4 ＋ XGBoost {rep["p_xgb"]*100:.1f}%风险 × 0.6')
-                        st.markdown('**工行产品预匹配**')
+                        st.markdown('**工行产品匹配建议**（仅供审批员参考，不构成产品审批结论）')
                         for pm in product_prematch(rep['score']):
-                            st.markdown(f'- **《{pm["产品"]}》** 匹配度：{pm["匹配度"]}')
+                            st.markdown(f'- **《{pm["产品"]}》** 匹配建议：{pm["匹配度"]}')
                             if pm['已满足']:
                                 st.markdown(f'  - 已满足：{"、".join(pm["已满足"])}')
                             st.markdown(f'  - 待核验：{"、".join(pm["待核验"])}')
@@ -661,7 +661,7 @@ if mode == '企业名称查询':
                 name = row['企业名称']
                 info = zhuhai_info(row)
                 st.subheader(f'🏙️ {name}（珠海本地企业）')
-                zt1, zt2, zt3 = st.tabs(['画像摘要', '材料清单', '产品预匹配'])
+                zt1, zt2, zt3 = st.tabs(['画像摘要', '材料清单', '产品匹配建议'])
                 with zt1:
                     st.markdown(f'**科创资质**：{info["rank_name"]}｜专精特新中小企业 {info["sme"]}｜小巨人 {info["giant"]}')
                     _extra = []
@@ -687,10 +687,11 @@ if mode == '企业名称查询':
                     st.caption('补充材料后可提升指标覆盖率，进而获得更完整的创新能力评估。')
                 with zt3:
                     for pm in product_prematch(info.get('proxy_score', 50) if info['coverage_tier'] == '可评分' else 40, info):
-                        st.markdown(f'- **《{pm["产品"]}》** 匹配度：{pm["匹配度"]}')
+                        st.markdown(f'- **《{pm["产品"]}》** 匹配建议：{pm["匹配度"]}')
                         if pm['已满足']:
                             st.markdown(f'  - 已满足：{"、".join(pm["已满足"])}')
                         st.markdown(f'  - 待核验：{"、".join(pm["待核验"])}')
+                    st.caption('产品匹配建议仅供审批员参考，产品准入与额度以工行总行信贷政策为准。')
                 st.caption('注：珠海非上市企业财务数据不公开，本页基于资质+专利+覆盖率三维画像，完整授信需补充财务材料。')
                 st.divider()
 
@@ -770,6 +771,6 @@ with st.expander('📋 数据来源与合规说明（点击展开）', expanded=
 | 经营/处罚信息 | 国家企业信用信息公示系统（gsxt.gov.cn） | 风险预警参考 |
 | 纳税信用等级 | 税务部门A级纳税人公示名单 | 经营画像辅助 |
 
-**合规声明**：本工具所有数据均来自**公开渠道**，不涉及工商银行内部客户数据；输出为模型参考值，不构成最终授信决策，实际审批以银行尽调为准。
+**合规声明**：本工具所有数据均来自政府部门主动公开信息及企业授权提交材料，不涉及工商银行内部客户数据；系统定位为"企业授权前提下的内部参考工具"，不对外提供征信评分，不触碰《征信业管理条例》牌照要求；输出为模型辅助参考值，不构成最终授信决策，实际审批以银行尽调为准。
 """)
 
