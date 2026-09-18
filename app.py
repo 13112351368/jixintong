@@ -328,6 +328,15 @@ def load_data():
     patents = pd.read_excel(os.path.join(DATA, '创新百强企业专利数据_106家.xlsx'))
     if '专利申请总量' not in zhuhai.columns:
         zhuhai = zhuhai.merge(patents[['企业名称', '专利申请总量']], on='企业名称', how='left')
+    # 手动补充格力大金机电完整画像数据（与论文一致）
+    mask = zhuhai['企业名称'].str.contains('格力大金机电', na=False)
+    if mask.any():
+        zhuhai.loc[mask, '有效专利数'] = 67
+        zhuhai.loc[mask, '专利申请总量'] = 67
+        zhuhai.loc[mask, '纳税信用等级'] = 'A级'
+        zhuhai.loc[mask, '成立年限'] = 17
+        zhuhai.loc[mask, '专利数量分级'] = '中'
+        zhuhai.loc[mask, '企业类型'] = '高新技术企业;专精特新中小企业'
     return train, zhuhai, patents
 
 @st.cache_resource
