@@ -170,8 +170,80 @@ div[role="radiogroup"] label:has(input:checked) { color: var(--icbc-red) !import
 ::-webkit-scrollbar-track { background: #F2F3F5; }
 ::-webkit-scrollbar-thumb { background: #C9CDD4; border-radius: 4px; }
 hr { border-color: #C9CDD4 !important; border-width: 1px !important; margin: 8px 0 !important; }
-/* 侧边栏紧凑 */
-section[data-testid="stSidebar"] .stAlert { margin-bottom: 4px !important; padding: 10px 14px !important; }
+/* 侧边栏一屏紧凑布局 */
+section[data-testid="stSidebar"] {
+    padding-top: 0 !important;
+    font-size: 13px !important;
+    overflow-y: hidden !important;
+}
+section[data-testid="stSidebar"] ::-webkit-scrollbar,
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"]::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
+    overflow-y: hidden !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stSidebarCollapseButton"] {
+    margin-bottom: 0 !important;
+}
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    margin-top: 0 !important;
+    margin-bottom: 6px !important;
+    padding-top: 0 !important;
+}
+section[data-testid="stSidebar"] .stRadio label {
+    font-size: 13px !important;
+    padding: 2px 0 !important;
+}
+section[data-testid="stSidebar"] .stAlert {
+    margin: 4px 0 !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+}
+section[data-testid="stSidebar"] hr { margin: 4px 0 !important; }
+section[data-testid="stSidebar"] .stExpander,
+section[data-testid="stSidebar"] details {
+    border: 1px solid #E5E6EB !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+}
+section[data-testid="stSidebar"] .stExpander summary,
+section[data-testid="stSidebar"] details summary {
+    background: #F7F8FA !important;
+}
+section[data-testid="stSidebar"] .stExpander > div:nth-child(2),
+section[data-testid="stSidebar"] details[open] > div:not([role]) {
+    padding-top: 4px !important;
+    padding-bottom: 12px !important;
+}
+section[data-testid="stSidebar"] .stExpander div[role="group"] {
+    padding: 10px 12px 14px 12px !important;
+}
+section[data-testid="stSidebar"] .stExpander p,
+section[data-testid="stSidebar"] .stExpander caption {
+    font-size: 12px !important;
+    margin: 4px 0 !important;
+    line-height: 1.5 !important;
+}
+section[data-testid="stSidebar"] .stCaption,
+section[data-testid="stSidebar"] caption {
+    font-size: 11px !important;
+    margin: 4px 0 0 0 !important;
+    padding: 0 !important;
+}
 header[data-testid="stHeader"] { background: #D9DCE0 !important; }
 div[data-testid="stTitle"], div[data-testid="stTitle"] h1 {
   background: transparent !important; border: none !important; padding: 0 !important;
@@ -531,12 +603,11 @@ st.divider()
 
 with st.sidebar:
     st.header('⚙️ 查询设置')
-    mode = st.radio('查询模式', ['🔍 企业名称查询', '🗂️ 珠海企业浏览'], index=0)
+    mode = st.radio('', ['🔍 企业名称查询', '🗂️ 珠海企业浏览'], index=0, label_visibility='collapsed')
     if mode == '🔍 企业名称查询':
         st.info('当前模式：按企业名称查询，输出模型评分/风险等级/SHAP解释', icon='🔍')
     else:
         st.info('当前模式：珠海总库浏览，支持按资质筛选/关键字过滤', icon='🗂️')
-    st.markdown('<hr style="margin:40px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
     with st.expander('模型信息', expanded=True):
         st.caption("版本 v1.2 ｜ 2026-09")
         st.caption("样本 3,559家（A股294+新三板3265）")
@@ -546,12 +617,10 @@ with st.sidebar:
         st.caption("AUC 0.8614 ｜ 准确率 81.7%")
         st.caption("KS 0.58（待最终验证集确认）")
         st.caption("PR-AUC 0.74（待最终验证集确认）")
-        st.markdown('<hr style="margin:16px 0;border-color:#C9CDD4;">', unsafe_allow_html=True)
-        st.caption("【消融实验】纯财务基线AUC=0.8336")
-        st.caption("加入研发/创新指标后AUC=0.8539（+0.020）")
-        st.caption("ΔPR-AUC=+0.061，ΔKS=+0.036")
-    st.divider()
-    st.caption('注：本工具输出为模型参考值，不构成最终授信决策。')
+        st.markdown('<hr style="margin:6px 0;border-color:#E5E6EB;">', unsafe_allow_html=True)
+        st.caption("【消融实验】纯财务AUC=0.8336 → 加创新指标后0.8539")
+        st.caption("提升：ΔAUC=+0.020，ΔPR-AUC=+0.061，ΔKS=+0.036")
+    st.caption('注：本工具输出为模型参考值，不构成最终授信决策。', unsafe_allow_html=False)
 
 if mode == '🔍 企业名称查询':
     if 'sel_company' not in st.session_state:
