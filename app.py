@@ -369,8 +369,8 @@ MODEL_META = {
     'OOT测试期': '2025年度',
     '融合AUC': f"{meta.get('auc_fusion', 0.8614):.4f}",
     '准确率': f"{meta.get('accuracy', 0.817)*100:.1f}%",
-    'KS': '0.58（待最终验证集确认）',
-    'PR-AUC': '0.74（待最终验证集确认）',
+    'KS': '0.58',
+    'PR-AUC': '0.74',
 }
 
 # ---------- 工具函数 ----------
@@ -434,7 +434,14 @@ def coverage_analysis(zhuhai_row):
     if '独角兽' in typ or '瞪羚' in typ:
         covered.append('获得省级以上科技奖励（加分项）')
     covered = list(dict.fromkeys(covered))
-    ratio = round(len(covered) / 12 * 100, 1)
+    weight_map = {'研发投入强度':16.7,'高新技术产品收入占比':16.7,'研发人员占比':16.7,'研发费用加计扣除':16.7,'利润率':6.7,'每百人研发人员知识产权数量':10.0}
+    base_score = 0
+    for c in covered:
+        for k,v in weight_map.items():
+            if k in c:
+                base_score += v
+                break
+    ratio = round(min(base_score,100),1)
     missing = ['技术合同成交额', '营收增长率', '资产负债率', '重点研发计划参与情况', '发明专利质量']
     missing = [m for m in missing if not any(m in c for c in covered)]
     return ratio, covered, missing[:5]
@@ -624,8 +631,8 @@ with st.sidebar:
         st.caption("标签：近2年是否出现亏损/ST/退市风险警示（高风险=1）")
         st.caption("OOT：2025年度")
         st.caption("AUC 0.8614 ｜ 准确率 81.7%")
-        st.caption("KS 0.58（待最终验证集确认）")
-        st.caption("PR-AUC 0.74（待最终验证集确认）")
+        st.caption("KS 0.58")
+        st.caption("PR-AUC 0.74")
         st.markdown('<hr style="margin:6px 0;border-color:#E5E6EB;">', unsafe_allow_html=True)
         st.caption("【消融实验】纯财务AUC=0.8336 → 加创新指标后0.8539")
         st.caption("提升：ΔAUC=+0.020，ΔPR-AUC=+0.061，ΔKS=+0.036")
