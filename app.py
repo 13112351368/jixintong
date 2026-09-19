@@ -364,7 +364,7 @@ MODEL_META = {
     '版本': 'v1.2',
     '训练样本': f"{int(meta.get('n_samples', 3559)):,}家（A股294+新三板3265）",
     '训练时间': '2026-09',
-    '特征数量': f"{len(FEATURES)}项财务+研发特征",
+    '特征数量': "11项财务+研发特征",
     '标签定义': '近2年是否出现亏损/ST/退市风险警示（高风险=1）',
     'OOT测试期': '2025年度',
     '融合AUC': f"{meta.get('auc_fusion', 0.8614):.4f}",
@@ -689,7 +689,7 @@ if mode == '🔍 企业名称查询':
                     else:
                         c1, c2, c3, c4 = st.columns(4)
                         c1.metric('模型辅助评分', rep['score'], delta='0-100分（非工行内部评分）')
-                        c2.metric('相对风险等级', rep['level'], delta='样本内排序分档，不构成违约概率')
+                        c2.metric('相对风险等级', rep['level'], delta='非违约概率，仅供参考')
                         c3.metric('高风险概率', f"{rep['p_fusion']*100:.1f}%")
                         c4.metric('授信动作', rep['grade'] + '级')
                         _gcolor = '#2E9E5B' if rep['score'] >= 80 else ('#8BC8EA' if rep['score'] >= 60 else ('#FAAD14' if rep['score'] >= 40 else '#EA6668'))
