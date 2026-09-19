@@ -385,7 +385,7 @@ def risk_level(score):
 
 def credit_action(score):
     if score >= 80:
-        return '建议进入常规授信评估，可适用绿色通道与利率优惠', 'A'
+        return '建议进入常规授信评估，可优先进入下一步人工核验', 'A'
     elif score >= 60:
         return '建议进入常规授信评估，补充1-2项材料后由行内测算额度', 'B'
     elif score >= 40:
@@ -765,7 +765,7 @@ if mode == '🔍 企业名称查询':
                         col.markdown(f'''<div style="background:#FFFFFF;border:1px solid #E5E6EB;border-radius:10px;padding:16px;min-height:140px;padding-bottom:20px;">
 <div style="font-size:13px;color:var(--text-sub);">{title}</div>
 <div style="font-size:28px;font-weight:600;color:var(--text-main);margin-top:8px;">{value}</div>
-<div style="display:inline-block;margin-top:10px;padding:5px 10px;border-radius:12px;font-size:12px;color:#2E9E5B;background:rgba(46,158,91,0.12);line-height:1.5;">↑ {tag}</div>
+<div style="display:inline-block;margin-top:10px;padding:5px 10px;border-radius:12px;font-size:12px;color:#2E9E5B;background:rgba(46,158,91,0.12);line-height:1.5;white-space:normal;word-break:break-all;">↑ {tag}</div>
 </div>''', unsafe_allow_html=True)
                     _info_card(c1, '创新能力评估', info['proxy_display'], info['coverage_tier'])
                     _info_card(c2, '指标覆盖率', f"{info['coverage']}%", f'覆盖{len(info["covered"])}/12项')
