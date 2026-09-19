@@ -762,7 +762,7 @@ if mode == '🔍 企业名称查询':
                         st.markdown('**经营画像**：' + '｜'.join(_extra))
                     c1, c2, c3 = st.columns(3)
                     def _info_card(col, title, value, tag):
-                        col.markdown(f'''<div style="background:#FFFFFF;border:1px solid #E5E6EB;border-radius:10px;padding:16px;min-height:140px;">
+                        col.markdown(f'''<div style="background:#FFFFFF;border:1px solid #E5E6EB;border-radius:10px;padding:16px;min-height:140px;padding-bottom:20px;">
 <div style="font-size:13px;color:var(--text-sub);">{title}</div>
 <div style="font-size:28px;font-weight:600;color:var(--text-main);margin-top:8px;">{value}</div>
 <div style="display:inline-block;margin-top:10px;padding:5px 10px;border-radius:12px;font-size:12px;color:#2E9E5B;background:rgba(46,158,91,0.12);line-height:1.5;">↑ {tag}</div>
@@ -858,7 +858,7 @@ with st.expander('📋 数据来源与合规说明（点击展开）', expanded=
 | --- | --- | --- |
 | 企业财务指标 | 东方财富/新浪财经/全国股转系统（公开年报） | 模型训练11项特征 |
 | 专利数据 | 国家知识产权局专利检索系统（pss-system.cponline.cnipa.gov.cn） | 专利质量/创新能力评估 |
-| 企业资质 | 珠海市科技创新局/工信局公示、高新技术企业认定名单 | 创新积分2.0覆盖率推断 |
+| 企业资质 | 珠海市科技创新局/工信局公示、高新技术企业认定名单 | 2.0相关指标材料核验 |
 | 经营/处罚信息 | 国家企业信用信息公示系统（gsxt.gov.cn） | 风险预警参考 |
 | 纳税信用等级 | 税务部门A级纳税人公示名单 | 经营画像辅助 |
 
